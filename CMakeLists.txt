@@ -90,10 +90,23 @@ set(ADAPTER_SOURCES
     adapter/protocol_adapter_refactored.cpp
 )
 
+# 缓冲区适配器文件
+set(BUFFER_SOURCES
+    buffer/protocol_buffer_adapter.h
+    buffer/protocol_buffer_adapter.cpp
+    buffer/producer_consumer_manager.h
+    buffer/producer_consumer_manager.cpp
+    buffer/protocol_system_integrator.h
+    buffer/protocol_system_integrator.cpp
+)
+
 # 公共头文件
 set(PUBLIC_HEADERS
     adapter/protocol_adapter.h
     adapter/protocol_adapter_refactored.h
+    buffer/protocol_buffer_adapter.h
+    buffer/producer_consumer_manager.h
+    buffer/protocol_system_integrator.h
     transport/itransport.h
     transport/serial_transport.h
     mapping/parameter_mapper.h
@@ -115,6 +128,7 @@ set(ALL_SOURCES
     ${CONNECTION_SOURCES}
     ${VERSION_SOURCES}
     ${ADAPTER_SOURCES}
+    ${BUFFER_SOURCES}
 )
 
 # ================================
@@ -153,11 +167,12 @@ target_include_directories(ProtocolLib
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# 链接 Qt 库
+# 链接 Qt 库和通用工具模块
 target_link_libraries(ProtocolLib
     PUBLIC
         Qt6::Core
         Qt6::SerialPort
+        common_utils
 )
 
 # Windows 特定设置
@@ -205,7 +220,37 @@ if(BUILD_STATIC_LIB)
         PUBLIC
             Qt6::Core
             Qt6::SerialPort
+            common_utils
     )
+endif()
+
+# ================================
+# 示例程序（可选编译）
+# ================================
+option(BUILD_PROTOCOL_EXAMPLES "Build protocol examples" OFF)
+
+if(BUILD_PROTOCOL_EXAMPLES)
+    add_executable(ProducerConsumerExample
+        examples/producer_consumer_integration_example.cpp
+    )
+
+    target_link_libraries(ProducerConsumerExample
+        PRIVATE
+            ProtocolLib
+            Qt6::Core
+    )
+
+    target_include_directories(ProducerConsumerExample
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    # 设置输出目录
+    set_target_properties(ProducerConsumerExample PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
+    )
+
+    message(STATUS "Protocol examples will be built")
 endif()
 
 # ================================
