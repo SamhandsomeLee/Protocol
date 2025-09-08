@@ -1,0 +1,31 @@
+@PACKAGE_INIT@
+
+# ProtocolLib CMake 配置文件
+# 用于在其他项目中查找和使用 ProtocolLib
+
+include(CMakeFindDependencyMacro)
+
+# 查找依赖项
+find_dependency(Qt6 REQUIRED COMPONENTS Core SerialPort)
+
+# 检查组件
+set(_ProtocolLib_supported_components ProtocolLib)
+
+foreach(_comp ${ProtocolLib_FIND_COMPONENTS})
+    if (NOT _comp IN_LIST _ProtocolLib_supported_components)
+        set(ProtocolLib_FOUND False)
+        set(ProtocolLib_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
+    endif()
+endforeach()
+
+# 包含目标文件
+if(NOT TARGET ProtocolLib::ProtocolLib)
+    include("${CMAKE_CURRENT_LIST_DIR}/ProtocolLibTargets.cmake")
+endif()
+
+# 设置变量
+set(ProtocolLib_LIBRARIES ProtocolLib::ProtocolLib)
+set(ProtocolLib_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include")
+
+# 版本检查
+check_required_components(ProtocolLib)

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+// 功能码定义
+enum FunCode {
+    FUNC_UNKNOWN = 0;   // 未知/无效操作（保留）
+    FUNC_READ = 1;      // 读取操作
+    FUNC_WRITE = 2;     // 写入操作
+    FUNC_CONFIG = 3;    // 配置操作
+    FUNC_CALIBRATE = 4; // 校准操作
+    FUNC_RESET = 5;     // 重置操作
+    FUNC_STATUS = 6;    // 状态查询
+}

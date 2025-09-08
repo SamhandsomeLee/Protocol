@@ -1,0 +1,201 @@
+{
+  "version": "1.0.0",
+  "protocolVersion": "2.1.0",
+  "description": "ERNC协议参数映射配置",
+  "mappings": {
+    "anc.enabled": {
+      "protobufPath": "value",
+      "fieldType": "bool",
+      "defaultValue": false,
+      "messageType": "ANC_OFF",
+      "deprecated": false,
+      "description": "ANC主动降噪开关"
+    },
+    "enc.enabled": {
+      "protobufPath": "value",
+      "fieldType": "bool",
+      "defaultValue": false,
+      "messageType": "ENC_OFF",
+      "deprecated": false,
+      "description": "ENC发动机噪声消除开关"
+    },
+    "rnc.enabled": {
+      "protobufPath": "value",
+      "fieldType": "bool",
+      "defaultValue": false,
+      "messageType": "RNC_OFF",
+      "deprecated": false,
+      "description": "RNC路噪消除开关"
+    },
+    "system.check_mode": {
+      "protobufPath": "value",
+      "fieldType": "bool",
+      "defaultValue": false,
+      "messageType": "CHECK_MODE",
+      "deprecated": false,
+      "description": "系统检测模式"
+    },
+    "tuning.alpha.alpha1": {
+      "protobufPath": "alpha1",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数1"
+    },
+    "tuning.alpha.alpha2": {
+      "protobufPath": "alpha2",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数2"
+    },
+    "tuning.alpha.alpha3": {
+      "protobufPath": "alpha3",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数3"
+    },
+    "tuning.alpha.alpha4": {
+      "protobufPath": "alpha4",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数4"
+    },
+    "tuning.alpha.alpha5": {
+      "protobufPath": "alpha5",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数5"
+    },
+    "tuning.alpha.alpha1_10": {
+      "protobufPath": "alpha1_10",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数1_10"
+    },
+    "tuning.alpha.alpha2_10": {
+      "protobufPath": "alpha2_10",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数2_10"
+    },
+    "tuning.alpha.alpha3_10": {
+      "protobufPath": "alpha3_10",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数3_10"
+    },
+    "tuning.alpha.alpha4_10": {
+      "protobufPath": "alpha4_10",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数4_10"
+    },
+    "tuning.alpha.alpha5_10": {
+      "protobufPath": "alpha5_10",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ALPHA",
+      "deprecated": false,
+      "description": "Alpha参数5_10"
+    },
+    "tuning.set1.gamma": {
+      "protobufPath": "gamma",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "SET1",
+      "deprecated": false,
+      "description": "Gamma参数"
+    },
+    "tuning.set1.eta": {
+      "protobufPath": "eta",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "SET1",
+      "deprecated": false,
+      "description": "Eta参数"
+    },
+    "tuning.set1.delta": {
+      "protobufPath": "delta",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "SET1",
+      "deprecated": false,
+      "description": "Delta参数"
+    },
+    "tuning.set1.refer_num": {
+      "protobufPath": "refer_num",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "SET1",
+      "deprecated": false,
+      "description": "参考数量"
+    },
+    "tuning.set1.spk_num": {
+      "protobufPath": "spk_num",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "SET1",
+      "deprecated": false,
+      "description": "扬声器数量"
+    },
+    "tuning.set1.output_amplitude": {
+      "protobufPath": "output_amplitude",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "SET1",
+      "deprecated": false,
+      "description": "输出幅度"
+    }
+  },
+  "messageTypes": {
+    "ANC_OFF": {
+      "description": "ANC控制消息",
+      "protoID": 0
+    },
+    "ENC_OFF": {
+      "description": "ENC控制消息",
+      "protoID": 1
+    },
+    "RNC_OFF": {
+      "description": "RNC控制消息",
+      "protoID": 2
+    },
+    "CHECK_MODE": {
+      "description": "检测模式消息",
+      "protoID": 3
+    },
+    "CALIBRATION_AMP": {
+      "description": "校准幅度消息",
+      "protoID": 4
+    },
+    "ALPHA": {
+      "description": "Alpha参数组",
+      "protoID": 5
+    },
+    "SET1": {
+      "description": "Set1参数组",
+      "protoID": 6
+    },
+    "CALIBRATION_OTHER": {
+      "description": "其他校准参数",
+      "protoID": 7
+    }
+  }
+}

@@ -1,0 +1,139 @@
+syntax = "proto3";
+import "nanopb.proto";
+import "basic.proto";
+
+
+message MSG_AncOff {
+    bool value = 1;
+}
+
+message MSG_EncOff {
+    bool value = 1;
+}
+
+message MSG_RncOff {
+    bool value = 1;
+}
+
+message MSG_CheckMod {
+    bool value = 1;
+}
+
+message MSG_ANCControl {
+    MSG_AncOff anc_off = 1;
+}
+
+message MSG_RncRefresh {
+    bool value = 1;
+}
+
+message MSG_SpeakerCheck {
+    bool value = 1;
+}
+
+message MSG_TranFuncFlag {
+    bool value = 1;
+}
+
+message MSG_BypassMode {
+    bool value = 1;
+}
+
+message MSG_Alpha {
+    uint32 alpha1 = 1;
+    uint32 alpha2 = 2;
+    uint32 alpha3 = 3;
+    uint32 alpha4 = 4;
+    uint32 alpha5 = 5;
+    uint32 alpha1_10 = 6;
+    uint32 alpha2_10 = 7;
+    uint32 alpha3_10 = 8;
+    uint32 alpha4_10 = 9;
+    uint32 alpha5_10 = 10;
+}
+
+message MSG_Set1 {
+    uint32 gamma = 1;
+    uint32 eta = 2;
+    uint32 delta = 3;
+    uint32 refer_num = 4;
+    uint32 spk_num = 5;
+    uint32 output_amplitude = 6;
+
+}
+
+message MSG_CalibrationAmp {
+    repeated uint32 tach_of_amp1 = 1 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 tach_of_amp2 = 2 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 tach_of_amp3 = 3 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 tach_of_amp4 = 4 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+
+    repeated uint32 amp1 = 5 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 amp2 = 6 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 amp3 = 7 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 amp4 = 8 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 amp5 = 9 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+
+}
+
+message MSG_CalibrationOther {
+
+    uint32 tach_of_step1 = 1 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_step2 = 2 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_step3 = 3 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_step4 = 4 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_step5 = 5 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+
+    uint32 step1 = 6 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 step2 = 7 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 step3 = 8 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 step4 = 9 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 step5 = 10 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+
+    uint32 tach_of_leaky1 = 11 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_leaky2 = 12 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_leaky3 = 13 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_leaky4 = 14 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 tach_of_leaky5 = 15 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+
+    uint32 leaky1 = 16 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 leaky2 = 17 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 leaky3 = 18 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 leaky4 = 19 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 leaky5 = 20 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+
+    uint32 err_wei1 = 21 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 err_wei2 = 22 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 err_wei3 = 23 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 err_wei4 = 24 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 err_wei5 = 25 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+
+    uint32 delta1 = 26 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 delta2 = 27 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 delta3 = 28 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 delta4 = 29 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 delta5 = 30 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+}
+
+/* --------------------- 定义交互参数 -------------------------- */
+enum ProtoID {
+    MSG_ANC_OFF = 0;
+    MSG_ENC_OFF = 1;
+    MSG_RNC_OFF = 2;
+    MSG_CHECK_MODE = 3;
+    MSG_CALIBRATION_AMP = 4;
+}
+
+message MsgRequestResponse {
+    ProtoID protoID = 1;
+    FunCode funCode = 2;
+    oneof payload {
+        MSG_AncOff msg_anc_off = 3;
+        MSG_EncOff msg_enc_off = 4;
+        MSG_RncOff msg_rnc_off = 5;
+        MSG_CheckMod msg_check_mod = 6;
+        MSG_CalibrationAmp msg_calibration_amp = 7;
+    }
+}
+
+

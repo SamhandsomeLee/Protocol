@@ -1,0 +1,66 @@
+#ifndef PROTOCOL_VERSION_CONFIG_H
+#define PROTOCOL_VERSION_CONFIG_H
+
+/**
+ * @file version_config.h
+ * @brief Protocol 库版本配置文件
+ *
+ * 此文件由 CMake 自动生成，包含版本信息和构建配置
+ */
+
+// 版本信息
+#define PROTOCOL_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define PROTOCOL_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define PROTOCOL_VERSION_PATCH @PROJECT_VERSION_PATCH@
+#define PROTOCOL_VERSION_STRING "@PROJECT_VERSION@"
+
+// 构建信息
+#define PROTOCOL_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
+#define PROTOCOL_COMPILER_ID "@CMAKE_CXX_COMPILER_ID@"
+#define PROTOCOL_COMPILER_VERSION "@CMAKE_CXX_COMPILER_VERSION@"
+
+// Qt 版本信息
+#define PROTOCOL_QT_VERSION_MAJOR @Qt6Core_VERSION_MAJOR@
+#define PROTOCOL_QT_VERSION_MINOR @Qt6Core_VERSION_MINOR@
+#define PROTOCOL_QT_VERSION_PATCH @Qt6Core_VERSION_PATCH@
+
+// 特性开关
+#cmakedefine PROTOCOL_STATIC_DEFINE
+#cmakedefine PROTOCOL_DLL_EXPORT
+
+// 平台信息
+#ifdef _WIN32
+    #define PROTOCOL_PLATFORM "Windows"
+#elif defined(__linux__)
+    #define PROTOCOL_PLATFORM "Linux"
+#elif defined(__APPLE__)
+    #define PROTOCOL_PLATFORM "macOS"
+#else
+    #define PROTOCOL_PLATFORM "Unknown"
+#endif
+
+// 导出宏定义
+#ifdef PROTOCOL_STATIC_DEFINE
+    #define PROTOCOL_EXPORT
+    #define PROTOCOL_NO_EXPORT
+#else
+    #ifdef _WIN32
+        #ifdef PROTOCOL_DLL_EXPORT
+            #define PROTOCOL_EXPORT __declspec(dllexport)
+        #else
+            #define PROTOCOL_EXPORT __declspec(dllimport)
+        #endif
+        #define PROTOCOL_NO_EXPORT
+    #else
+        #define PROTOCOL_EXPORT __attribute__((visibility("default")))
+        #define PROTOCOL_NO_EXPORT __attribute__((visibility("hidden")))
+    #endif
+#endif
+
+// 版本比较宏
+#define PROTOCOL_VERSION_CHECK(major, minor, patch) \
+    ((PROTOCOL_VERSION_MAJOR > (major)) || \
+     (PROTOCOL_VERSION_MAJOR == (major) && PROTOCOL_VERSION_MINOR > (minor)) || \
+     (PROTOCOL_VERSION_MAJOR == (major) && PROTOCOL_VERSION_MINOR == (minor) && PROTOCOL_VERSION_PATCH >= (patch)))
+
+#endif // PROTOCOL_VERSION_CONFIG_H
