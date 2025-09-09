@@ -46,7 +46,7 @@ void ConnectionManager::setTransport(ITransport* transport) {
 }
 
 bool ConnectionManager::isConnected() const {
-    return transport_ && transport_->isConnected();
+    return transport_ && transport_->isOpen();
 }
 
 QString ConnectionManager::transportDescription() const {
@@ -71,7 +71,7 @@ bool ConnectionManager::sendData(const QByteArray& data) {
         return false;
     }
 
-    if (!transport_->isConnected()) {
+    if (!transport_->isOpen()) {
         QString error = "Transport not connected";
         qWarning() << error;
         emit communicationError(error);
@@ -101,7 +101,7 @@ bool ConnectionManager::sendData(const QByteArray& data) {
     packet.append(PACKET_FOOTER);                   // 包尾
 
     // 发送数据
-    bool success = transport_->write(packet);
+    bool success = transport_->send(packet);
 
     {
         QMutexLocker locker(&statsMutex_);
@@ -285,7 +285,7 @@ void ConnectionManager::connectTransportSignals() {
 
     connect(transport_, &ITransport::dataReceived,
             this, &ConnectionManager::handleTransportDataReceived);
-    connect(transport_, &ITransport::errorOccurred,
+    connect(transport_, &ITransport::transportError,
             this, &ConnectionManager::handleTransportError);
     connect(transport_, &ITransport::connectionStatusChanged,
             this, &ConnectionManager::handleTransportConnectionChanged);

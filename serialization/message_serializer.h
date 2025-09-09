@@ -74,7 +74,7 @@ public:
      * @param handler 处理器实例
      * @return 成功返回true，失败返回false
      */
-    bool registerCustomHandler(MessageType messageType, std::unique_ptr<IMessageHandler> handler);
+    bool registerCustomHandler(MessageType messageType, std::shared_ptr<IMessageHandler> handler);
 
 signals:
     /**
@@ -111,7 +111,7 @@ private:
     void recordStatistics(MessageType messageType, const QString& operation, bool success, int dataSize);
 
 private:
-    std::unique_ptr<MessageFactory> messageFactory_;
+    std::shared_ptr<MessageFactory> messageFactory_;
 
     // 统计信息
     struct Statistics {

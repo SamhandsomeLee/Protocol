@@ -11,19 +11,22 @@ QByteArray AlphaMessageHandler::serialize(const QVariantMap& parameters) {
 
     MSG_Alpha msg = MSG_Alpha_init_zero;
 
-    // 设置Alpha值
+    // 设置Alpha值 - 映射到alpha1字段作为主要alpha值
     float alphaValue = parameters.value("processing.alpha", 0.5f).toFloat();
-    msg.alpha_value = alphaValue;
+    msg.alpha1 = static_cast<uint32_t>(alphaValue * 1000); // 转换为整数，假设乘以1000保持精度
 
-    // 如果有其他相关参数，也可以在这里设置
-    if (parameters.contains("processing.beta")) {
-        msg.has_beta_value = true;
-        msg.beta_value = parameters.value("processing.beta").toFloat();
+    // 如果有其他alpha相关参数，可以映射到其他字段
+    if (parameters.contains("processing.alpha2")) {
+        msg.alpha2 = static_cast<uint32_t>(parameters.value("processing.alpha2").toFloat() * 1000);
     }
-
-    if (parameters.contains("processing.gamma")) {
-        msg.has_gamma_value = true;
-        msg.gamma_value = parameters.value("processing.gamma").toFloat();
+    if (parameters.contains("processing.alpha3")) {
+        msg.alpha3 = static_cast<uint32_t>(parameters.value("processing.alpha3").toFloat() * 1000);
+    }
+    if (parameters.contains("processing.alpha4")) {
+        msg.alpha4 = static_cast<uint32_t>(parameters.value("processing.alpha4").toFloat() * 1000);
+    }
+    if (parameters.contains("processing.alpha5")) {
+        msg.alpha5 = static_cast<uint32_t>(parameters.value("processing.alpha5").toFloat() * 1000);
     }
 
     // 序列化消息
@@ -58,19 +61,24 @@ bool AlphaMessageHandler::deserialize(const QByteArray& data, QVariantMap& param
         return false;
     }
 
-    // 解析Alpha参数
-    parameters["processing.alpha"] = msg.alpha_value;
+    // 解析Alpha参数 - 从alpha1字段获取主要alpha值
+    parameters["processing.alpha"] = static_cast<float>(msg.alpha1) / 1000.0f; // 转换回浮点数
 
-    // 解析可选参数
-    if (msg.has_beta_value) {
-        parameters["processing.beta"] = msg.beta_value;
+    // 解析其他alpha字段
+    if (msg.alpha2 > 0) {
+        parameters["processing.alpha2"] = static_cast<float>(msg.alpha2) / 1000.0f;
+    }
+    if (msg.alpha3 > 0) {
+        parameters["processing.alpha3"] = static_cast<float>(msg.alpha3) / 1000.0f;
+    }
+    if (msg.alpha4 > 0) {
+        parameters["processing.alpha4"] = static_cast<float>(msg.alpha4) / 1000.0f;
+    }
+    if (msg.alpha5 > 0) {
+        parameters["processing.alpha5"] = static_cast<float>(msg.alpha5) / 1000.0f;
     }
 
-    if (msg.has_gamma_value) {
-        parameters["processing.gamma"] = msg.gamma_value;
-    }
-
-    qDebug() << "Alpha message deserialized: alpha:" << msg.alpha_value;
+    qDebug() << "Alpha message deserialized: alpha1:" << msg.alpha1;
     return true;
 }
 
@@ -94,20 +102,20 @@ bool AlphaMessageHandler::validateParameters(const QVariantMap& parameters) cons
         return false;
     }
 
-    // 验证可选参数
-    if (parameters.contains("processing.beta")) {
-        QVariant betaVariant = parameters.value("processing.beta");
-        if (!betaVariant.canConvert<float>()) {
-            qWarning() << "Invalid type for processing.beta, expected float, got:" << betaVariant.typeName();
-            return false;
-        }
-    }
-
-    if (parameters.contains("processing.gamma")) {
-        QVariant gammaVariant = parameters.value("processing.gamma");
-        if (!gammaVariant.canConvert<float>()) {
-            qWarning() << "Invalid type for processing.gamma, expected float, got:" << gammaVariant.typeName();
-            return false;
+    // 验证其他可选alpha参数
+    QStringList alphaParams = {"processing.alpha2", "processing.alpha3", "processing.alpha4", "processing.alpha5"};
+    for (const QString& param : alphaParams) {
+        if (parameters.contains(param)) {
+            QVariant alphaVariant = parameters.value(param);
+            if (!alphaVariant.canConvert<float>()) {
+                qWarning() << "Invalid type for" << param << ", expected float, got:" << alphaVariant.typeName();
+                return false;
+            }
+            float alphaValue = alphaVariant.toFloat();
+            if (alphaValue < MIN_ALPHA_VALUE || alphaValue > MAX_ALPHA_VALUE) {
+                qWarning() << param << "value out of range [" << MIN_ALPHA_VALUE << "," << MAX_ALPHA_VALUE << "], got:" << alphaValue;
+                return false;
+            }
         }
     }
 

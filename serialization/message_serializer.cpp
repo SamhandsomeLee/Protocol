@@ -5,7 +5,7 @@ namespace Protocol {
 
 MessageSerializer::MessageSerializer(QObject* parent)
     : QObject(parent)
-    , messageFactory_(std::make_unique<MessageFactory>())
+    , messageFactory_(std::make_shared<MessageFactory>())
 {
     qDebug() << "MessageSerializer initialized";
 }
@@ -100,13 +100,13 @@ QString MessageSerializer::getMessageTypeDescription(MessageType messageType) co
     return messageFactory_->getTypeDescription(messageType);
 }
 
-bool MessageSerializer::registerCustomHandler(MessageType messageType, std::unique_ptr<IMessageHandler> handler) {
+bool MessageSerializer::registerCustomHandler(MessageType messageType, std::shared_ptr<IMessageHandler> handler) {
     if (!handler) {
         qWarning() << "Cannot register null handler";
         return false;
     }
 
-    bool result = messageFactory_->registerHandler(messageType, std::move(handler));
+    bool result = messageFactory_->registerHandler(messageType, handler);
     if (result) {
         qInfo() << "Custom handler registered for message type:" << static_cast<int>(messageType);
     }

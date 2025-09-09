@@ -9,12 +9,12 @@
 #include <QString>
 #include <memory>
 
-#include "../transport/itransport.h"
-#include "../core/message_types.h"
-#include "../mapping/parameter_mapper.h"
-#include "../serialization/message_serializer.h"
-#include "../connection/connection_manager.h"
-#include "../version/version_manager.h"
+#include "protocol/transport/itransport.h"
+#include "protocol/core/message_types.h"
+#include "protocol/mapping/parameter_mapper.h"
+#include "protocol/serialization/message_serializer.h"
+#include "protocol/connection/connection_manager.h"
+#include "protocol/version/version_manager.h"
 
 namespace Protocol {
 

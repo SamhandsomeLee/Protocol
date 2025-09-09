@@ -1,7 +1,7 @@
 #include "protocol_system_integrator.h"
-#include "../adapter/protocol_adapter.h"
-#include "../adapter/protocol_adapter_refactored.h"
-#include "../connection/connection_manager.h"
+#include "protocol/adapter/protocol_adapter.h"
+#include "protocol/adapter/protocol_adapter_refactored.h"
+#include "protocol/connection/connection_manager.h"
 
 #include <QDebug>
 #include <QDateTime>
@@ -97,7 +97,7 @@ void ProtocolSystemIntegrator::setIntegrationConfig(const IntegrationConfig& con
     qDebug() << "Integration config updated";
 }
 
-void ProtocolSystemIntegrator::integrateProtocolAdapter(Protocol::Adapter::ProtocolAdapter* adapter)
+void ProtocolSystemIntegrator::integrateProtocolAdapter(ProtocolAdapter* adapter)
 {
     if (protocolAdapter_ == adapter) {
         return;
@@ -110,7 +110,7 @@ void ProtocolSystemIntegrator::integrateProtocolAdapter(Protocol::Adapter::Proto
     }
 }
 
-void ProtocolSystemIntegrator::integrateProtocolAdapterRefactored(Protocol::Adapter::ProtocolAdapterRefactored* adapter)
+void ProtocolSystemIntegrator::integrateProtocolAdapterRefactored(Protocol::ProtocolAdapterRefactored* adapter)
 {
     if (protocolAdapterRefactored_ == adapter) {
         return;
@@ -123,7 +123,7 @@ void ProtocolSystemIntegrator::integrateProtocolAdapterRefactored(Protocol::Adap
     }
 }
 
-void ProtocolSystemIntegrator::integrateConnectionManager(Protocol::Connection::ConnectionManager* connectionManager)
+void ProtocolSystemIntegrator::integrateConnectionManager(Protocol::ConnectionManager* connectionManager)
 {
     if (connectionManager_ == connectionManager) {
         return;
@@ -313,15 +313,15 @@ void ProtocolSystemIntegrator::connectProtocolAdapter()
     }
 
     // 连接数据接收信号
-    connect(protocolAdapter_, &Protocol::Adapter::ProtocolAdapter::dataReceived,
+    connect(protocolAdapter_, &ProtocolAdapter::dataReceived,
             this, &ProtocolSystemIntegrator::handleProtocolDataReceived);
 
     // 连接错误信号
-    connect(protocolAdapter_, &Protocol::Adapter::ProtocolAdapter::communicationError,
+    connect(protocolAdapter_, &ProtocolAdapter::communicationError,
             this, &ProtocolSystemIntegrator::handleProtocolError);
 
     // 连接连接状态变化信号
-    connect(protocolAdapter_, &Protocol::Adapter::ProtocolAdapter::connectionStatusChanged,
+    connect(protocolAdapter_, &ProtocolAdapter::connectionStatusChanged,
             this, &ProtocolSystemIntegrator::handleConnectionStatusChanged);
 }
 
@@ -332,15 +332,15 @@ void ProtocolSystemIntegrator::connectProtocolAdapterRefactored()
     }
 
     // 连接数据接收信号
-    connect(protocolAdapterRefactored_, &Protocol::Adapter::ProtocolAdapterRefactored::dataReceived,
+    connect(protocolAdapterRefactored_, &Protocol::ProtocolAdapterRefactored::dataReceived,
             this, &ProtocolSystemIntegrator::handleProtocolDataReceived);
 
     // 连接错误信号
-    connect(protocolAdapterRefactored_, &Protocol::Adapter::ProtocolAdapterRefactored::communicationError,
+    connect(protocolAdapterRefactored_, &Protocol::ProtocolAdapterRefactored::communicationError,
             this, &ProtocolSystemIntegrator::handleProtocolError);
 
     // 连接连接状态变化信号
-    connect(protocolAdapterRefactored_, &Protocol::Adapter::ProtocolAdapterRefactored::connectionStatusChanged,
+    connect(protocolAdapterRefactored_, &Protocol::ProtocolAdapterRefactored::connectionStatusChanged,
             this, &ProtocolSystemIntegrator::handleConnectionStatusChanged);
 }
 
@@ -351,19 +351,19 @@ void ProtocolSystemIntegrator::connectConnectionManager()
     }
 
     // 连接数据接收信号
-    connect(connectionManager_, &Protocol::Connection::ConnectionManager::dataReceived,
+    connect(connectionManager_, &Protocol::ConnectionManager::dataReceived,
             this, &ProtocolSystemIntegrator::handleConnectionDataReceived);
 
     // 连接数据发送信号
-    connect(connectionManager_, &Protocol::Connection::ConnectionManager::dataSent,
+    connect(connectionManager_, &Protocol::ConnectionManager::dataSent,
             this, &ProtocolSystemIntegrator::handleConnectionDataSent);
 
     // 连接错误信号
-    connect(connectionManager_, &Protocol::Connection::ConnectionManager::communicationError,
+    connect(connectionManager_, &Protocol::ConnectionManager::communicationError,
             this, &ProtocolSystemIntegrator::handleConnectionError);
 
     // 连接连接状态变化信号
-    connect(connectionManager_, &Protocol::Connection::ConnectionManager::connectionStatusChanged,
+    connect(connectionManager_, &Protocol::ConnectionManager::connectionStatusChanged,
             this, &ProtocolSystemIntegrator::handleConnectionStatusChanged);
 }
 

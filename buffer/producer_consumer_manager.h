@@ -6,6 +6,7 @@
 #include <QByteArray>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QDateTime>
 #include <memory>
 #include <atomic>
 #include <functional>

@@ -9,14 +9,10 @@
 #include "protocol_buffer_adapter.h"
 
 // 前向声明
+class ProtocolAdapter;  // 全局命名空间中
 namespace Protocol {
-    namespace Adapter {
-        class ProtocolAdapter;
-        class ProtocolAdapterRefactored;
-    }
-    namespace Connection {
-        class ConnectionManager;
-    }
+    class ProtocolAdapterRefactored;  // Protocol命名空间中
+    class ConnectionManager;          // Protocol命名空间中
 }
 
 namespace Protocol {
@@ -48,9 +44,9 @@ public:
     ~ProtocolSystemIntegrator();
 
     // === 组件集成 ===
-    void integrateProtocolAdapter(Protocol::Adapter::ProtocolAdapter* adapter);
-    void integrateProtocolAdapterRefactored(Protocol::Adapter::ProtocolAdapterRefactored* adapter);
-    void integrateConnectionManager(Protocol::Connection::ConnectionManager* connectionManager);
+    void integrateProtocolAdapter(ProtocolAdapter* adapter);
+    void integrateProtocolAdapterRefactored(Protocol::ProtocolAdapterRefactored* adapter);
+    void integrateConnectionManager(Protocol::ConnectionManager* connectionManager);
     void integrateBufferAdapter(ProtocolBufferAdapter* bufferAdapter);
 
     // === 配置接口 ===
@@ -129,9 +125,9 @@ private slots:
 
 private:
     // === 组件引用 ===
-    Protocol::Adapter::ProtocolAdapter* protocolAdapter_;
-    Protocol::Adapter::ProtocolAdapterRefactored* protocolAdapterRefactored_;
-    Protocol::Connection::ConnectionManager* connectionManager_;
+    ProtocolAdapter* protocolAdapter_;
+    Protocol::ProtocolAdapterRefactored* protocolAdapterRefactored_;
+    Protocol::ConnectionManager* connectionManager_;
     ProtocolBufferAdapter* bufferAdapter_;
 
     // === 生产者消费者管理器 ===

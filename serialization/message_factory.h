@@ -37,7 +37,7 @@ public:
      * @param handler 处理器实例（工厂将获得所有权）
      * @return 成功返回true，失败返回false
      */
-    bool registerHandler(MessageType messageType, std::unique_ptr<IMessageHandler> handler);
+    bool registerHandler(MessageType messageType, std::shared_ptr<IMessageHandler> handler);
 
     /**
      * @brief 检查是否支持某种消息类型
@@ -71,7 +71,7 @@ private:
     void initializeDefaultHandlers();
 
 private:
-    QHash<MessageType, std::unique_ptr<IMessageHandler>> handlers_;
+    QHash<MessageType, std::shared_ptr<IMessageHandler>> handlers_;
 };
 
 } // namespace Protocol

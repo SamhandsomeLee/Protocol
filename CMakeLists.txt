@@ -16,6 +16,21 @@ set(CMAKE_AUTOUIC ON)
 # 查找 Qt6 组件
 find_package(Qt6 REQUIRED COMPONENTS Core SerialPort)
 
+# 添加 common_utils 支持
+if(NOT TARGET common_utils)
+    # 如果在独立构建中，添加common子目录
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../common/CMakeLists.txt")
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../common" "${CMAKE_CURRENT_BINARY_DIR}/common")
+    else()
+        message(WARNING "common_utils not found and common directory not available")
+        # 创建一个空的interface库作为占位符
+        add_library(common_utils INTERFACE)
+        target_include_directories(common_utils INTERFACE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../common"
+        )
+    endif()
+endif()
+
 # 定义版本信息
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/version/version_config.h.in"
@@ -50,6 +65,7 @@ set(TRANSPORT_SOURCES
 # 核心组件文件
 set(CORE_SOURCES
     core/message_types.h
+    core/message_types.cpp
     core/imessage_handler.h
 )
 
@@ -62,12 +78,18 @@ set(MAPPING_SOURCES
 set(SERIALIZATION_SOURCES
     serialization/message_serializer.h
     serialization/message_serializer.cpp
+    serialization/message_factory.h
+    serialization/message_factory.cpp
 )
 
 # 处理器文件
 set(HANDLER_SOURCES
     handlers/alpha_message_handler.h
     handlers/alpha_message_handler.cpp
+    handlers/anc_message_handler.h
+    handlers/anc_message_handler.cpp
+    handlers/enc_message_handler.h
+    handlers/enc_message_handler.cpp
 )
 
 # 连接管理文件
@@ -150,7 +172,6 @@ set_target_properties(ProtocolLib PROPERTIES
 # 定义导出宏
 target_compile_definitions(ProtocolLib PRIVATE
     PROTOCOL_LIBRARY_BUILD
-    QT_NO_KEYWORDS  # 避免 Qt 关键字冲突
 )
 
 target_compile_definitions(ProtocolLib PUBLIC
@@ -160,8 +181,9 @@ target_compile_definitions(ProtocolLib PUBLIC
 # 包含目录
 target_include_directories(ProtocolLib
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nanopb>
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}

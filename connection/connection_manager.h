@@ -7,7 +7,7 @@
 #include <QTimer>
 #include <QQueue>
 #include <QMutex>
-#include "../transport/itransport.h"
+#include "protocol/transport/itransport.h"
 
 namespace Protocol {
 
