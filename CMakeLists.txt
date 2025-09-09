@@ -233,9 +233,12 @@ if(BUILD_STATIC_LIB)
 
     target_include_directories(ProtocolLibStatic
         PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/nanopb>
             $<INSTALL_INTERFACE:include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
     target_link_libraries(ProtocolLibStatic
@@ -279,8 +282,8 @@ endif()
 # 安装配置
 # ================================
 
-# 安装动态库
-install(TARGETS ProtocolLib
+# 安装动态库和依赖
+install(TARGETS ProtocolLib common_utils
     EXPORT ProtocolLibTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -364,9 +367,10 @@ if(BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-if(BUILD_TESTS)
-    add_subdirectory(tests)
-endif()
+# Tests directory has been removed
+# if(BUILD_TESTS)
+#     add_subdirectory(tests)
+# endif()
 
 # ================================
 # 打包配置
