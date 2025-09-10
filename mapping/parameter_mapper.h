@@ -136,10 +136,11 @@ private:
 
     /**
      * @brief 从JSON对象解析参数信息
+     * @param parameterPath 参数路径
      * @param jsonParam JSON参数对象
      * @return 参数信息
      */
-    ParameterInfo parseParameterFromJson(const QJsonObject& jsonParam) const;
+    ParameterInfo parseParameterFromJson(const QString& parameterPath, const QJsonObject& jsonParam) const;
 
 private:
     QHash<QString, ParameterInfo> mappings_;  // 参数路径到信息的映射

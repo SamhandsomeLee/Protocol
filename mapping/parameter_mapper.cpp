@@ -44,10 +44,11 @@ bool ParameterMapper::loadMapping(const QString& configFile) {
 }
 
 bool ParameterMapper::loadMappingFromJson(const QJsonObject& jsonObject) {
-    QJsonArray parameters = jsonObject["parameters"].toArray();
+    // 从JSON配置中获取mappings对象
+    QJsonObject mappingsObject = jsonObject["mappings"].toObject();
 
-    if (parameters.isEmpty()) {
-        qWarning() << "No parameters found in mapping configuration";
+    if (mappingsObject.isEmpty()) {
+        qWarning() << "No mappings found in configuration";
         return false;
     }
 
@@ -58,14 +59,17 @@ bool ParameterMapper::loadMappingFromJson(const QJsonObject& jsonObject) {
     // 重新添加默认映射
     mappings_ = defaultMappings;
 
-    // 加载新映射
-    for (const QJsonValue& value : parameters) {
-        if (!value.isObject()) {
-            qWarning() << "Invalid parameter entry (not an object)";
+    // 遍历mappings对象中的每个参数
+    for (auto it = mappingsObject.begin(); it != mappingsObject.end(); ++it) {
+        const QString& parameterPath = it.key();
+        const QJsonValue& parameterValue = it.value();
+
+        if (!parameterValue.isObject()) {
+            qWarning() << "Invalid parameter entry for" << parameterPath << "(not an object)";
             continue;
         }
 
-        ParameterInfo info = parseParameterFromJson(value.toObject());
+        ParameterInfo info = parseParameterFromJson(parameterPath, parameterValue.toObject());
         if (validateParameterInfo(info)) {
             mappings_[info.logicalPath] = info;
             qDebug() << "Loaded parameter mapping:" << info.logicalPath << "->" << info.protobufPath;
@@ -205,19 +209,21 @@ bool ParameterMapper::validateParameterInfo(const ParameterInfo& info) const {
     return true;
 }
 
-ParameterInfo ParameterMapper::parseParameterFromJson(const QJsonObject& jsonParam) const {
+ParameterInfo ParameterMapper::parseParameterFromJson(const QString& parameterPath, const QJsonObject& jsonParam) const {
     ParameterInfo info;
 
-    info.logicalPath = jsonParam["logical_path"].toString();
-    info.protobufPath = jsonParam["protobuf_path"].toString();
-    info.fieldType = jsonParam["field_type"].toString();
-    info.defaultValue = jsonParam["default_value"].toVariant();
+    // 逻辑路径就是JSON中的键名
+    info.logicalPath = parameterPath;
+    // 使用JSON中的实际字段名
+    info.protobufPath = jsonParam["protobufPath"].toString();
+    info.fieldType = jsonParam["fieldType"].toString();
+    info.defaultValue = jsonParam["defaultValue"].toVariant();
     info.deprecated = jsonParam["deprecated"].toBool(false);
-    info.replacedBy = jsonParam["replaced_by"].toString();
+    info.replacedBy = jsonParam["replacedBy"].toString();
     info.description = jsonParam["description"].toString();
 
     // 解析消息类型
-    QString messageTypeStr = jsonParam["message_type"].toString();
+    QString messageTypeStr = jsonParam["messageType"].toString();
     info.messageType = MessageTypeUtils::fromString(messageTypeStr);
 
     return info;
