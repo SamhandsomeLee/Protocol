@@ -18,7 +18,7 @@ extern "C" {
 #include "protocol/nanopb/pb_encode.h"
 #include "protocol/nanopb/pb_decode.h"
 #include "protocol/messages/ERNC_praram.pb.h"
-#include "protocol/messages/basic.pb.h"
+// #include "protocol/messages/basic.pb.h" // 已移除，避免FunCode枚举冲突
 }
 
 /**

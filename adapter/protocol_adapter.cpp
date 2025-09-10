@@ -142,14 +142,14 @@ bool ProtocolAdapter::deserializeParameters(const QByteArray& data, QVariantMap&
     // 尝试解析为不同的消息类型
     // 这里简化处理，实际应该根据消息头确定类型
     QList<MessageType> typesToTry = {
-        MessageType::ANC_OFF,
-        MessageType::ENC_OFF,
-        MessageType::RNC_OFF,
-        MessageType::CHECK_MODE,
-        MessageType::ALPHA,
-        MessageType::SET1,
-        MessageType::CALIBRATION_AMP,
-        MessageType::CALIBRATION_OTHER
+        MessageType::ANC_SWITCH,  // 替换ANC_OFF
+        MessageType::ANC_SWITCH,  // 替换ENC_OFF
+        MessageType::ANC_SWITCH,  // 替换RNC_OFF
+        MessageType::CHECK_MOD,   // 修正CHECK_MODE为CHECK_MOD
+        MessageType::ALPHA_PARAMS,  // 替换ALPHA
+        MessageType::ORDER2_PARAMS, // 替换SET1
+        MessageType::CHANNEL_AMPLITUDE,  // 替换CALIBRATION_AMP
+        MessageType::SYSTEM_RANGES   // 替换CALIBRATION_OTHER
     };
 
     for (MessageType type : typesToTry) {
@@ -250,16 +250,16 @@ bool ProtocolAdapter::loadProtocolMapping(const QString& mappingFile)
 
         // 确定消息类型
         QString msgTypeStr = mapping["messageType"].toString();
-        paramMapping.messageType = MessageType::ANC_OFF; // 默认值
+        paramMapping.messageType = MessageType::ANC_SWITCH; // 默认值
 
-        if (msgTypeStr == "ANC_OFF") paramMapping.messageType = MessageType::ANC_OFF;
-        else if (msgTypeStr == "ENC_OFF") paramMapping.messageType = MessageType::ENC_OFF;
-        else if (msgTypeStr == "RNC_OFF") paramMapping.messageType = MessageType::RNC_OFF;
-        else if (msgTypeStr == "CHECK_MODE") paramMapping.messageType = MessageType::CHECK_MODE;
-        else if (msgTypeStr == "ALPHA") paramMapping.messageType = MessageType::ALPHA;
-        else if (msgTypeStr == "SET1") paramMapping.messageType = MessageType::SET1;
-        else if (msgTypeStr == "CALIBRATION_AMP") paramMapping.messageType = MessageType::CALIBRATION_AMP;
-        else if (msgTypeStr == "CALIBRATION_OTHER") paramMapping.messageType = MessageType::CALIBRATION_OTHER;
+        if (msgTypeStr == "ANC_OFF") paramMapping.messageType = MessageType::ANC_SWITCH;
+        else if (msgTypeStr == "ENC_OFF") paramMapping.messageType = MessageType::ANC_SWITCH;
+        else if (msgTypeStr == "RNC_OFF") paramMapping.messageType = MessageType::ANC_SWITCH;
+        else if (msgTypeStr == "CHECK_MODE") paramMapping.messageType = MessageType::CHECK_MOD;
+        else if (msgTypeStr == "ALPHA") paramMapping.messageType = MessageType::ALPHA_PARAMS;
+        else if (msgTypeStr == "SET1") paramMapping.messageType = MessageType::ORDER2_PARAMS;
+        else if (msgTypeStr == "CALIBRATION_AMP") paramMapping.messageType = MessageType::CHANNEL_AMPLITUDE;
+        else if (msgTypeStr == "CALIBRATION_OTHER") paramMapping.messageType = MessageType::SYSTEM_RANGES;
 
         pathMapping_[logicalPath] = paramMapping;
     }
@@ -309,7 +309,7 @@ void ProtocolAdapter::initializeDefaultMappings()
     ancOffMapping.protobufPath = "value";
     ancOffMapping.fieldType = "bool";
     ancOffMapping.defaultValue = false;
-    ancOffMapping.messageType = MessageType::ANC_OFF;
+    ancOffMapping.messageType = MessageType::ANC_SWITCH;
     ancOffMapping.deprecated = false;
     pathMapping_["anc.enabled"] = ancOffMapping;
 
@@ -319,7 +319,7 @@ void ProtocolAdapter::initializeDefaultMappings()
     encOffMapping.protobufPath = "value";
     encOffMapping.fieldType = "bool";
     encOffMapping.defaultValue = false;
-    encOffMapping.messageType = MessageType::ENC_OFF;
+    encOffMapping.messageType = MessageType::ANC_SWITCH;
     encOffMapping.deprecated = false;
     pathMapping_["enc.enabled"] = encOffMapping;
 
@@ -329,7 +329,7 @@ void ProtocolAdapter::initializeDefaultMappings()
     rncOffMapping.protobufPath = "value";
     rncOffMapping.fieldType = "bool";
     rncOffMapping.defaultValue = false;
-    rncOffMapping.messageType = MessageType::RNC_OFF;
+    rncOffMapping.messageType = MessageType::ANC_SWITCH;
     rncOffMapping.deprecated = false;
     pathMapping_["rnc.enabled"] = rncOffMapping;
 
@@ -339,7 +339,7 @@ void ProtocolAdapter::initializeDefaultMappings()
     checkModeMapping.protobufPath = "value";
     checkModeMapping.fieldType = "bool";
     checkModeMapping.defaultValue = false;
-    checkModeMapping.messageType = MessageType::CHECK_MODE;
+    checkModeMapping.messageType = MessageType::CHECK_MOD;
     checkModeMapping.deprecated = false;
     pathMapping_["system.check_mode"] = checkModeMapping;
 
@@ -353,7 +353,7 @@ void ProtocolAdapter::initializeDefaultMappings()
         alphaMapping.protobufPath = param;
         alphaMapping.fieldType = "uint32";
         alphaMapping.defaultValue = 0;
-        alphaMapping.messageType = MessageType::ALPHA;
+        alphaMapping.messageType = MessageType::ALPHA_PARAMS;
         alphaMapping.deprecated = false;
         pathMapping_[alphaMapping.logicalPath] = alphaMapping;
     }
@@ -367,7 +367,7 @@ void ProtocolAdapter::initializeDefaultMappings()
         set1Mapping.protobufPath = param;
         set1Mapping.fieldType = "uint32";
         set1Mapping.defaultValue = 0;
-        set1Mapping.messageType = MessageType::SET1;
+        set1Mapping.messageType = MessageType::ORDER2_PARAMS;
         set1Mapping.deprecated = false;
         pathMapping_[set1Mapping.logicalPath] = set1Mapping;
     }
@@ -380,28 +380,36 @@ ProtocolAdapter::MessageType ProtocolAdapter::getMessageTypeFromPath(const QStri
     if (pathMapping_.contains(parameterPath)) {
         return pathMapping_[parameterPath].messageType;
     }
-    return MessageType::ANC_OFF; // 默认类型
+    return MessageType::ANC_SWITCH; // 默认类型
 }
 
 QByteArray ProtocolAdapter::serializeMessage(MessageType type, const QVariantMap& parameters)
 {
     switch (type) {
-    case MessageType::ANC_OFF:
-        return serializeAncOff(parameters.value("anc.enabled", false).toBool());
-    case MessageType::ENC_OFF:
-        return serializeEncOff(parameters.value("enc.enabled", false).toBool());
-    case MessageType::RNC_OFF:
-        return serializeRncOff(parameters.value("rnc.enabled", false).toBool());
-    case MessageType::CHECK_MODE:
-        return serializeCheckMode(parameters.value("system.check_mode", false).toBool());
-    case MessageType::ALPHA:
-        return serializeAlpha(parameters);
-    case MessageType::SET1:
-        return serializeSet1(parameters);
-    case MessageType::CALIBRATION_AMP:
-        return serializeCalibrationAmp(parameters);
-    case MessageType::CALIBRATION_OTHER:
-        return serializeCalibrationOther(parameters);
+    case MessageType::ANC_SWITCH: // 处理ANC/ENC/RNC开关
+        if (parameters.contains("anc.enabled")) {
+            return serializeAncSwitch(parameters);
+        } else if (parameters.contains("enc.enabled")) {
+            return serializeAncSwitch(parameters);
+        } else if (parameters.contains("rnc.enabled")) {
+            return serializeAncSwitch(parameters);
+        }
+        return serializeAncSwitch(parameters); // 默认处理
+
+    case MessageType::CHECK_MOD: // CHECK_MODE已改为CHECK_MOD
+        return serializeCheckMod(parameters.value("system.check_mode", 0).toUInt());
+
+    case MessageType::ALPHA_PARAMS:
+        return serializeAlphaParams(parameters);
+
+    case MessageType::ORDER2_PARAMS:
+        return serializeOrder2Params(parameters);
+
+    case MessageType::CHANNEL_AMPLITUDE:
+        return serializeChannelAmplitude(parameters);
+
+    case MessageType::SYSTEM_RANGES:
+        return serializeSystemRanges(parameters);
     default:
         return QByteArray();
     }
@@ -410,22 +418,27 @@ QByteArray ProtocolAdapter::serializeMessage(MessageType type, const QVariantMap
 bool ProtocolAdapter::deserializeMessage(MessageType type, const QByteArray& data, QVariantMap& parameters)
 {
     switch (type) {
-    case MessageType::ANC_OFF:
-        return deserializeAncOff(data, parameters);
-    case MessageType::ENC_OFF:
-        return deserializeEncOff(data, parameters);
-    case MessageType::RNC_OFF:
-        return deserializeRncOff(data, parameters);
-    case MessageType::CHECK_MODE:
-        return deserializeCheckMode(data, parameters);
-    case MessageType::ALPHA:
-        return deserializeAlpha(data, parameters);
-    case MessageType::SET1:
-        return deserializeSet1(data, parameters);
-    case MessageType::CALIBRATION_AMP:
-        return deserializeCalibrationAmp(data, parameters);
-    case MessageType::CALIBRATION_OTHER:
-        return deserializeCalibrationOther(data, parameters);
+    case MessageType::ANC_SWITCH: // 处理ANC/ENC/RNC开关
+        // 尝试不同的解析方式，取决于数据格式
+        if (deserializeAncSwitch(data, parameters)) {
+            return true;
+        }
+        return false;
+
+    case MessageType::CHECK_MOD: // CHECK_MODE已改为CHECK_MOD
+        return deserializeCheckMod(data, parameters);
+
+    case MessageType::ALPHA_PARAMS:
+        return deserializeAlphaParams(data, parameters);
+
+    case MessageType::ORDER2_PARAMS:
+        return deserializeOrder2Params(data, parameters);
+
+    case MessageType::CHANNEL_AMPLITUDE:
+        return deserializeChannelAmplitude(data, parameters);
+
+    case MessageType::SYSTEM_RANGES:
+        return deserializeSystemRanges(data, parameters);
     default:
         return false;
     }
@@ -463,61 +476,41 @@ void ProtocolAdapter::processReceivedData(const QByteArray& data)
 }
 
 // 具体消息序列化实现
-QByteArray ProtocolAdapter::serializeAncOff(bool value)
+QByteArray ProtocolAdapter::serializeAncSwitch(const QVariantMap& parameters)
 {
-    MSG_AncOff message = MSG_AncOff_init_zero;
-    message.value = value;
+    MSG_AncSwitch message = MSG_AncSwitch_init_zero;
 
-    uint8_t buffer[MSG_AncOff_size];
+    // 检查哪个参数存在，并使用相应的值
+    if (parameters.contains("anc.enabled")) {
+        message.anc_off = !parameters.value("anc.enabled", false).toBool(); // 取反，因为anc_off=true表示关闭
+    } else if (parameters.contains("enc.enabled")) {
+        message.enc_off = !parameters.value("enc.enabled", false).toBool(); // 取反，因为enc_off=true表示关闭
+    } else if (parameters.contains("rnc.enabled")) {
+        message.rnc_off = !parameters.value("rnc.enabled", false).toBool(); // 取反，因为rnc_off=true表示关闭
+    } else {
+        message.anc_off = true; // 默认值为关闭
+    }
+
+    uint8_t buffer[MSG_AncSwitch_size];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    bool success = pb_encode(&stream, MSG_AncOff_fields, &message);
+    bool success = pb_encode(&stream, MSG_AncSwitch_fields, &message);
     if (!success) {
-        qWarning() << "Failed to encode MSG_AncOff:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to encode MSG_AncSwitch:" << PB_GET_ERROR(&stream);
         return QByteArray();
     }
 
     return QByteArray(reinterpret_cast<const char*>(buffer), stream.bytes_written);
 }
 
-QByteArray ProtocolAdapter::serializeEncOff(bool value)
-{
-    MSG_EncOff message = MSG_EncOff_init_zero;
-    message.value = value;
+// 注意：此函数已被合并到serializeAncSwitch中处理
 
-    uint8_t buffer[MSG_EncOff_size];
-    pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+// 注意：此函数已被合并到serializeAncSwitch中处理
 
-    bool success = pb_encode(&stream, MSG_EncOff_fields, &message);
-    if (!success) {
-        qWarning() << "Failed to encode MSG_EncOff:" << PB_GET_ERROR(&stream);
-        return QByteArray();
-    }
-
-    return QByteArray(reinterpret_cast<const char*>(buffer), stream.bytes_written);
-}
-
-QByteArray ProtocolAdapter::serializeRncOff(bool value)
-{
-    MSG_RncOff message = MSG_RncOff_init_zero;
-    message.value = value;
-
-    uint8_t buffer[MSG_RncOff_size];
-    pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
-    bool success = pb_encode(&stream, MSG_RncOff_fields, &message);
-    if (!success) {
-        qWarning() << "Failed to encode MSG_RncOff:" << PB_GET_ERROR(&stream);
-        return QByteArray();
-    }
-
-    return QByteArray(reinterpret_cast<const char*>(buffer), stream.bytes_written);
-}
-
-QByteArray ProtocolAdapter::serializeCheckMode(bool value)
+QByteArray ProtocolAdapter::serializeCheckMod(uint32_t checkMod)
 {
     MSG_CheckMod message = MSG_CheckMod_init_zero;
-    message.value = value;
+    message.check_mod = checkMod;
 
     uint8_t buffer[MSG_CheckMod_size];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
@@ -531,9 +524,9 @@ QByteArray ProtocolAdapter::serializeCheckMode(bool value)
     return QByteArray(reinterpret_cast<const char*>(buffer), stream.bytes_written);
 }
 
-QByteArray ProtocolAdapter::serializeAlpha(const QVariantMap& parameters)
+QByteArray ProtocolAdapter::serializeAlphaParams(const QVariantMap& parameters)
 {
-    MSG_Alpha message = MSG_Alpha_init_zero;
+    MSG_AlphaParams message = MSG_AlphaParams_init_zero;
 
     message.alpha1 = parameters.value("tuning.alpha.alpha1", 0).toUInt();
     message.alpha2 = parameters.value("tuning.alpha.alpha2", 0).toUInt();
@@ -546,72 +539,85 @@ QByteArray ProtocolAdapter::serializeAlpha(const QVariantMap& parameters)
     message.alpha4_10 = parameters.value("tuning.alpha.alpha4_10", 0).toUInt();
     message.alpha5_10 = parameters.value("tuning.alpha.alpha5_10", 0).toUInt();
 
-    uint8_t buffer[MSG_Alpha_size];
+    uint8_t buffer[MSG_AlphaParams_size];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    bool success = pb_encode(&stream, MSG_Alpha_fields, &message);
+    bool success = pb_encode(&stream, MSG_AlphaParams_fields, &message);
     if (!success) {
-        qWarning() << "Failed to encode MSG_Alpha:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to encode MSG_AlphaParams:" << PB_GET_ERROR(&stream);
         return QByteArray();
     }
 
     return QByteArray(reinterpret_cast<const char*>(buffer), stream.bytes_written);
 }
 
-QByteArray ProtocolAdapter::serializeSet1(const QVariantMap& parameters)
+QByteArray ProtocolAdapter::serializeOrder2Params(const QVariantMap& parameters)
 {
-    MSG_Set1 message = MSG_Set1_init_zero;
+    MSG_Order2Params message = MSG_Order2Params_init_zero;
 
-    message.gamma = parameters.value("tuning.set1.gamma", 0).toUInt();
-    message.eta = parameters.value("tuning.set1.eta", 0).toUInt();
-    message.delta = parameters.value("tuning.set1.delta", 0).toUInt();
-    message.refer_num = parameters.value("tuning.set1.refer_num", 0).toUInt();
-    message.spk_num = parameters.value("tuning.set1.spk_num", 0).toUInt();
-    message.output_amplitude = parameters.value("tuning.set1.output_amplitude", 0).toUInt();
+    // 根据MSG_Order2Params结构体的定义更新字段赋值
+    // 使用默认值初始化数组
+    uint32_t defaultValue = 0;
 
-    uint8_t buffer[MSG_Set1_size];
+    // 设置数组字段的默认值
+    for (int i = 0; i < 9; i++) {
+        message.tach_of_amp1[i] = defaultValue;
+        message.tach_of_step1[i] = defaultValue;
+    }
+
+    for (int i = 0; i < 10; i++) {
+        message.amp1[i] = defaultValue;
+        message.step1[i] = defaultValue;
+        message.leaky1[i] = defaultValue;
+    }
+
+    // 设置其他字段
+    message.err_wei1 = parameters.value("tuning.set1.gamma", 0).toUInt(); // 使用gamma值替代
+    message.delta1 = parameters.value("tuning.set1.delta", 0).toUInt();
+
+    uint8_t buffer[MSG_Order2Params_size];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    bool success = pb_encode(&stream, MSG_Set1_fields, &message);
+    bool success = pb_encode(&stream, MSG_Order2Params_fields, &message);
     if (!success) {
-        qWarning() << "Failed to encode MSG_Set1:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to encode MSG_Order2Params:" << PB_GET_ERROR(&stream);
         return QByteArray();
     }
 
     return QByteArray(reinterpret_cast<const char*>(buffer), stream.bytes_written);
 }
 
-QByteArray ProtocolAdapter::serializeCalibrationAmp(const QVariantMap& parameters)
+QByteArray ProtocolAdapter::serializeChannelAmplitude(const QVariantMap& parameters)
 {
-    MSG_CalibrationAmp message = MSG_CalibrationAmp_init_zero;
+    MSG_ChannelAmplitude message = MSG_ChannelAmplitude_init_zero;
 
     // 这里简化处理，实际需要根据具体的数组参数来填充
     // 示例代码，需要根据实际参数结构调整
 
-    uint8_t buffer[MSG_CalibrationAmp_size];
+    uint8_t buffer[MSG_ChannelAmplitude_size];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    bool success = pb_encode(&stream, MSG_CalibrationAmp_fields, &message);
+    bool success = pb_encode(&stream, MSG_ChannelAmplitude_fields, &message);
     if (!success) {
-        qWarning() << "Failed to encode MSG_CalibrationAmp:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to encode MSG_ChannelAmplitude:" << PB_GET_ERROR(&stream);
         return QByteArray();
     }
 
     return QByteArray(reinterpret_cast<const char*>(buffer), stream.bytes_written);
 }
 
-QByteArray ProtocolAdapter::serializeCalibrationOther(const QVariantMap& parameters)
+QByteArray ProtocolAdapter::serializeSystemRanges(const QVariantMap& parameters)
 {
-    MSG_CalibrationOther message = MSG_CalibrationOther_init_zero;
+    MSG_SystemRanges message = MSG_SystemRanges_init_zero;
 
     // 这里简化处理，实际需要根据具体的参数来填充
 
-    uint8_t buffer[MSG_CalibrationOther_size];
+    uint8_t buffer[MSG_SystemRanges_size];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    bool success = pb_encode(&stream, MSG_CalibrationOther_fields, &message);
+    bool success = pb_encode(&stream, MSG_SystemRanges_fields, &message);
     if (!success) {
-        qWarning() << "Failed to encode MSG_CalibrationOther:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to encode MSG_SystemRanges:" << PB_GET_ERROR(&stream);
         return QByteArray();
     }
 
@@ -619,55 +625,27 @@ QByteArray ProtocolAdapter::serializeCalibrationOther(const QVariantMap& paramet
 }
 
 // 具体消息反序列化实现
-bool ProtocolAdapter::deserializeAncOff(const QByteArray& data, QVariantMap& parameters)
+bool ProtocolAdapter::deserializeAncSwitch(const QByteArray& data, QVariantMap& parameters)
 {
-    MSG_AncOff message = MSG_AncOff_init_zero;
+    MSG_AncSwitch message = MSG_AncSwitch_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
         reinterpret_cast<const uint8_t*>(data.constData()), data.size());
 
-    bool success = pb_decode(&stream, MSG_AncOff_fields, &message);
+    bool success = pb_decode(&stream, MSG_AncSwitch_fields, &message);
     if (!success) {
-        qWarning() << "Failed to decode MSG_AncOff:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to decode MSG_AncSwitch:" << PB_GET_ERROR(&stream);
         return false;
     }
 
-    parameters["anc.enabled"] = message.value;
+    parameters["anc.enabled"] = !message.anc_off; // 取反，因为anc_off=true表示关闭
     return true;
 }
 
-bool ProtocolAdapter::deserializeEncOff(const QByteArray& data, QVariantMap& parameters)
-{
-    MSG_EncOff message = MSG_EncOff_init_zero;
-    pb_istream_t stream = pb_istream_from_buffer(
-        reinterpret_cast<const uint8_t*>(data.constData()), data.size());
+// 注意：此函数已被合并到deserializeAncSwitch中处理
 
-    bool success = pb_decode(&stream, MSG_EncOff_fields, &message);
-    if (!success) {
-        qWarning() << "Failed to decode MSG_EncOff:" << PB_GET_ERROR(&stream);
-        return false;
-    }
+// 注意：此函数已被合并到deserializeAncSwitch中处理
 
-    parameters["enc.enabled"] = message.value;
-    return true;
-}
-
-bool ProtocolAdapter::deserializeRncOff(const QByteArray& data, QVariantMap& parameters)
-{
-    MSG_RncOff message = MSG_RncOff_init_zero;
-    pb_istream_t stream = pb_istream_from_buffer(
-        reinterpret_cast<const uint8_t*>(data.constData()), data.size());
-
-    bool success = pb_decode(&stream, MSG_RncOff_fields, &message);
-    if (!success) {
-        qWarning() << "Failed to decode MSG_RncOff:" << PB_GET_ERROR(&stream);
-        return false;
-    }
-
-    parameters["rnc.enabled"] = message.value;
-    return true;
-}
-
-bool ProtocolAdapter::deserializeCheckMode(const QByteArray& data, QVariantMap& parameters)
+bool ProtocolAdapter::deserializeCheckMod(const QByteArray& data, QVariantMap& parameters)
 {
     MSG_CheckMod message = MSG_CheckMod_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
@@ -679,19 +657,19 @@ bool ProtocolAdapter::deserializeCheckMode(const QByteArray& data, QVariantMap& 
         return false;
     }
 
-    parameters["system.check_mode"] = message.value;
+    parameters["system.check_mode"] = message.check_mod;
     return true;
 }
 
-bool ProtocolAdapter::deserializeAlpha(const QByteArray& data, QVariantMap& parameters)
+bool ProtocolAdapter::deserializeAlphaParams(const QByteArray& data, QVariantMap& parameters)
 {
-    MSG_Alpha message = MSG_Alpha_init_zero;
+    MSG_AlphaParams message = MSG_AlphaParams_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
         reinterpret_cast<const uint8_t*>(data.constData()), data.size());
 
-    bool success = pb_decode(&stream, MSG_Alpha_fields, &message);
+    bool success = pb_decode(&stream, MSG_AlphaParams_fields, &message);
     if (!success) {
-        qWarning() << "Failed to decode MSG_Alpha:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to decode MSG_AlphaParams:" << PB_GET_ERROR(&stream);
         return false;
     }
 
@@ -709,37 +687,40 @@ bool ProtocolAdapter::deserializeAlpha(const QByteArray& data, QVariantMap& para
     return true;
 }
 
-bool ProtocolAdapter::deserializeSet1(const QByteArray& data, QVariantMap& parameters)
+bool ProtocolAdapter::deserializeOrder2Params(const QByteArray& data, QVariantMap& parameters)
 {
-    MSG_Set1 message = MSG_Set1_init_zero;
+    MSG_Order2Params message = MSG_Order2Params_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
         reinterpret_cast<const uint8_t*>(data.constData()), data.size());
 
-    bool success = pb_decode(&stream, MSG_Set1_fields, &message);
+    bool success = pb_decode(&stream, MSG_Order2Params_fields, &message);
     if (!success) {
-        qWarning() << "Failed to decode MSG_Set1:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to decode MSG_Order2Params:" << PB_GET_ERROR(&stream);
         return false;
     }
 
-    parameters["tuning.set1.gamma"] = message.gamma;
-    parameters["tuning.set1.eta"] = message.eta;
-    parameters["tuning.set1.delta"] = message.delta;
-    parameters["tuning.set1.refer_num"] = message.refer_num;
-    parameters["tuning.set1.spk_num"] = message.spk_num;
-    parameters["tuning.set1.output_amplitude"] = message.output_amplitude;
+    // 根据MSG_Order2Params结构体的定义更新参数映射
+    parameters["tuning.set1.gamma"] = message.err_wei1; // 使用err_wei1替代gamma
+    parameters["tuning.set1.delta"] = message.delta1;
+
+    // 其他参数可能需要从数组中提取或设置默认值
+    parameters["tuning.set1.eta"] = 0; // 默认值
+    parameters["tuning.set1.refer_num"] = 0; // 默认值
+    parameters["tuning.set1.spk_num"] = 0; // 默认值
+    parameters["tuning.set1.output_amplitude"] = 0; // 默认值
 
     return true;
 }
 
-bool ProtocolAdapter::deserializeCalibrationAmp(const QByteArray& data, QVariantMap& parameters)
+bool ProtocolAdapter::deserializeChannelAmplitude(const QByteArray& data, QVariantMap& parameters)
 {
-    MSG_CalibrationAmp message = MSG_CalibrationAmp_init_zero;
+    MSG_ChannelAmplitude message = MSG_ChannelAmplitude_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
         reinterpret_cast<const uint8_t*>(data.constData()), data.size());
 
-    bool success = pb_decode(&stream, MSG_CalibrationAmp_fields, &message);
+    bool success = pb_decode(&stream, MSG_ChannelAmplitude_fields, &message);
     if (!success) {
-        qWarning() << "Failed to decode MSG_CalibrationAmp:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to decode MSG_ChannelAmplitude:" << PB_GET_ERROR(&stream);
         return false;
     }
 
@@ -747,15 +728,15 @@ bool ProtocolAdapter::deserializeCalibrationAmp(const QByteArray& data, QVariant
     return true;
 }
 
-bool ProtocolAdapter::deserializeCalibrationOther(const QByteArray& data, QVariantMap& parameters)
+bool ProtocolAdapter::deserializeSystemRanges(const QByteArray& data, QVariantMap& parameters)
 {
-    MSG_CalibrationOther message = MSG_CalibrationOther_init_zero;
+    MSG_SystemRanges message = MSG_SystemRanges_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
         reinterpret_cast<const uint8_t*>(data.constData()), data.size());
 
-    bool success = pb_decode(&stream, MSG_CalibrationOther_fields, &message);
+    bool success = pb_decode(&stream, MSG_SystemRanges_fields, &message);
     if (!success) {
-        qWarning() << "Failed to decode MSG_CalibrationOther:" << PB_GET_ERROR(&stream);
+        qWarning() << "Failed to decode MSG_SystemRanges:" << PB_GET_ERROR(&stream);
         return false;
     }
 

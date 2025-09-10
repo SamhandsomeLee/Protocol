@@ -436,11 +436,11 @@ void ProtocolAdapterRefactored::disconnectComponentSignals() {
 
 MessageType ProtocolAdapterRefactored::getMessageTypeFromPath(const QString& parameterPath) const {
     if (!parameterMapper_) {
-        return MessageType::ANC_OFF; // 默认类型
+        return MessageType::ANC_SWITCH; // 默认类型
     }
 
     auto paramInfo = parameterMapper_->getParameterInfo(parameterPath);
-    return paramInfo.isValid() ? paramInfo.messageType : MessageType::ANC_OFF;
+    return paramInfo.isValid() ? paramInfo.messageType : MessageType::ANC_SWITCH;
 }
 
 void ProtocolAdapterRefactored::processProtocolData(const QByteArray& data) {

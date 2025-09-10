@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # 添加必要的包依赖
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 # 设置C++标准
 set(CMAKE_CXX_STANDARD 17)
@@ -100,44 +100,7 @@ set_target_properties(protocol_integration_test PROPERTIES
     AUTOMOC ON
 )
 
-# QML示例（如果支持Qt Quick）
-if(TARGET Qt6::Quick)
-    # QML协议使用示例
-    add_executable(protocol_qml_example
-        protocol_usage_example.qml
-    )
-    
-    target_link_libraries(protocol_qml_example
-        ProtocolLib
-        Qt6::Core
-        Qt6::Quick
-        Qt6::Qml
-    )
-    
-    set_target_properties(protocol_qml_example PROPERTIES
-        OUTPUT_NAME "qml_example"
-        AUTOMOC ON
-        AUTORCC ON
-    )
-
-    # QML依赖注入示例  
-    add_executable(protocol_qml_di_example
-        dependency_injection_example.qml
-    )
-    
-    target_link_libraries(protocol_qml_di_example
-        ProtocolLib
-        Qt6::Core
-        Qt6::Quick
-        Qt6::Qml
-    )
-    
-    set_target_properties(protocol_qml_di_example PROPERTIES
-        OUTPUT_NAME "qml_di_example"
-        AUTOMOC ON
-        AUTORCC ON
-    )
-endif()
+# QML示例已移除
 
 # 安装示例程序
 install(TARGETS
@@ -151,15 +114,7 @@ install(TARGETS
     COMPONENT Examples
 )
 
-# 安装QML示例（如果构建了）
-if(TARGET protocol_qml_example)
-    install(TARGETS
-        protocol_qml_example
-        protocol_qml_di_example
-        RUNTIME DESTINATION bin/examples
-        COMPONENT Examples
-    )
-endif()
+# QML示例已移除，不再安装
 
 # 安装示例配置文件
 install(FILES
@@ -168,30 +123,24 @@ install(FILES
     COMPONENT Examples
 )
 
-# 安装QML源文件
-install(FILES
-    protocol_usage_example.qml
-    dependency_injection_example.qml
-    DESTINATION share/examples/qml
-    COMPONENT Examples
-)
+# QML源文件已移除，不再安装
 
 # 创建示例程序测试目标
 if(BUILD_TESTING)
     enable_testing()
-    
+
     # 基础示例测试
     add_test(NAME basic_example_test
         COMMAND protocol_basic_example
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-    
+
     # 集成测试
     add_test(NAME integration_test
         COMMAND protocol_integration_test
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-    
+
     # 设置测试超时
     set_tests_properties(basic_example_test integration_test
         PROPERTIES TIMEOUT 30
@@ -206,9 +155,5 @@ message(STATUS "  - Usage Example: ${CMAKE_CURRENT_BINARY_DIR}/usage_example")
 message(STATUS "  - Dependency Injection: ${CMAKE_CURRENT_BINARY_DIR}/di_example")
 message(STATUS "  - Producer Consumer: ${CMAKE_CURRENT_BINARY_DIR}/producer_consumer_example")
 message(STATUS "  - Integration Test: ${CMAKE_CURRENT_BINARY_DIR}/integration_test")
-if(TARGET Qt6::Quick)
-    message(STATUS "  - QML Examples: Available")
-else()
-    message(STATUS "  - QML Examples: Skipped (Qt Quick not found)")
-endif()
+message(STATUS "  - QML Examples: Removed")
 message(STATUS "  - New Features: 18 message types, ProtoID 0-158, hierarchical parameters")

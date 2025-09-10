@@ -9,17 +9,17 @@ QByteArray EncMessageHandler::serialize(const QVariantMap& parameters) {
         return QByteArray();
     }
 
-    MSG_EncOff msg = MSG_EncOff_init_zero;
+    MSG_AncSwitch msg = MSG_AncSwitch_init_zero;
 
     // 设置ENC开关状态
     bool encEnabled = parameters.value("enc.enabled", false).toBool();
-    msg.value = !encEnabled; // 反转逻辑，因为这是ENC_OFF消息
+    msg.enc_off = !encEnabled; // 设置ENC_OFF字段（true=关闭，false=开启）
 
     // 序列化消息
     uint8_t buffer[MAX_BUFFER_SIZE];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    if (!pb_encode(&stream, MSG_EncOff_fields, &msg)) {
+    if (!pb_encode(&stream, MSG_AncSwitch_fields, &msg)) {
         qWarning() << "Failed to encode ENC message:" << PB_GET_ERROR(&stream);
         return QByteArray();
     }
@@ -36,19 +36,19 @@ bool EncMessageHandler::deserialize(const QByteArray& data, QVariantMap& paramet
         return false;
     }
 
-    MSG_EncOff msg = MSG_EncOff_init_zero;
+    MSG_AncSwitch msg = MSG_AncSwitch_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
         reinterpret_cast<const uint8_t*>(data.constData()),
         data.size()
     );
 
-    if (!pb_decode(&stream, MSG_EncOff_fields, &msg)) {
+    if (!pb_decode(&stream, MSG_AncSwitch_fields, &msg)) {
         qWarning() << "Failed to decode ENC message:" << PB_GET_ERROR(&stream);
         return false;
     }
 
     // 解析ENC状态
-    bool encEnabled = !msg.value; // 反转逻辑
+    bool encEnabled = !msg.enc_off; // 反转逻辑，enc_off=true表示关闭
     parameters["enc.enabled"] = encEnabled;
 
     qDebug() << "ENC message deserialized: ENC enabled:" << encEnabled;

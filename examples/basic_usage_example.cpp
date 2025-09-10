@@ -142,7 +142,7 @@ private:
 
         // 9. 获取协议版本
         qInfo() << "9. 协议版本:" << adapter_->getProtocolVersion();
-        
+
         // 10. 展示新支持的消息类型
         qInfo() << "10. 新支持的消息类型演示:";
         qInfo() << "   - ANC_SWITCH (ProtoID: 151): ANC/ENC/RNC开关控制";

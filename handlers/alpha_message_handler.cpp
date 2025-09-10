@@ -9,7 +9,7 @@ QByteArray AlphaMessageHandler::serialize(const QVariantMap& parameters) {
         return QByteArray();
     }
 
-    MSG_Alpha msg = MSG_Alpha_init_zero;
+    MSG_AlphaParams msg = MSG_AlphaParams_init_zero;
 
     // 设置Alpha值 - 映射到alpha1字段作为主要alpha值
     float alphaValue = parameters.value("processing.alpha", 0.5f).toFloat();
@@ -33,7 +33,7 @@ QByteArray AlphaMessageHandler::serialize(const QVariantMap& parameters) {
     uint8_t buffer[MAX_BUFFER_SIZE];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    if (!pb_encode(&stream, MSG_Alpha_fields, &msg)) {
+    if (!pb_encode(&stream, MSG_AlphaParams_fields, &msg)) {
         qWarning() << "Failed to encode Alpha message:" << PB_GET_ERROR(&stream);
         return QByteArray();
     }
@@ -50,13 +50,13 @@ bool AlphaMessageHandler::deserialize(const QByteArray& data, QVariantMap& param
         return false;
     }
 
-    MSG_Alpha msg = MSG_Alpha_init_zero;
+    MSG_AlphaParams msg = MSG_AlphaParams_init_zero;
     pb_istream_t stream = pb_istream_from_buffer(
         reinterpret_cast<const uint8_t*>(data.constData()),
         data.size()
     );
 
-    if (!pb_decode(&stream, MSG_Alpha_fields, &msg)) {
+    if (!pb_decode(&stream, MSG_AlphaParams_fields, &msg)) {
         qWarning() << "Failed to decode Alpha message:" << PB_GET_ERROR(&stream);
         return false;
     }

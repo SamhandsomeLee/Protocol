@@ -53,8 +53,8 @@ set(NANOPB_SOURCES
 # ERNC Protocol v3.0 protobuf 消息文件
 set(PROTOBUF_SOURCES
     messages/ERNC_praram.pb.c  # 主要的ERNC参数协议文件
-    messages/ernc.pb.c         # 传统ERNC协议支持
-    messages/basic.pb.c        # 基础消息支持
+    # messages/ernc.pb.c         # 已删除
+    # messages/basic.pb.c        # 已删除
 )
 
 # 传输层文件
@@ -93,19 +93,19 @@ set(HANDLER_SOURCES
     handlers/anc_message_handler.cpp
     handlers/enc_message_handler.h
     handlers/enc_message_handler.cpp
-    
+
     # 新增的车辆状态处理器
     handlers/vehicle_message_handler.h
     handlers/vehicle_message_handler.cpp
-    
+
     # 新增的通道配置处理器
     handlers/channel_message_handler.h
     handlers/channel_message_handler.cpp
-    
+
     # 新增的RNC参数处理器
     handlers/rnc_message_handler.h
     handlers/rnc_message_handler.cpp
-    
+
     # 新增的实时数据处理器
     handlers/realtime_data_handler.h
     handlers/realtime_data_handler.cpp
@@ -339,8 +339,6 @@ install(FILES
 # 安装 ERNC v3.0 protobuf 头文件
 install(FILES
     messages/ERNC_praram.pb.h  # 主要的ERNC参数协议头文件
-    messages/ernc.pb.h         # 传统ERNC协议头文件
-    messages/basic.pb.h        # 基础消息头文件
     DESTINATION include/protocol/messages
     COMPONENT Development
 )

@@ -140,7 +140,7 @@ void ParameterMapper::initializeDefaultMappings() {
     ancEnabledInfo.protobufPath = "value";
     ancEnabledInfo.fieldType = "bool";
     ancEnabledInfo.defaultValue = false;
-    ancEnabledInfo.messageType = MessageType::ANC_OFF;
+    ancEnabledInfo.messageType = MessageType::ANC_SWITCH;
     ancEnabledInfo.description = "ANC enable/disable control";
     mappings_["anc.enabled"] = ancEnabledInfo;
 
@@ -150,7 +150,7 @@ void ParameterMapper::initializeDefaultMappings() {
     encEnabledInfo.protobufPath = "value";
     encEnabledInfo.fieldType = "bool";
     encEnabledInfo.defaultValue = false;
-    encEnabledInfo.messageType = MessageType::ENC_OFF;
+    encEnabledInfo.messageType = MessageType::ANC_SWITCH;
     encEnabledInfo.description = "ENC enable/disable control";
     mappings_["enc.enabled"] = encEnabledInfo;
 
@@ -160,7 +160,7 @@ void ParameterMapper::initializeDefaultMappings() {
     rncEnabledInfo.protobufPath = "value";
     rncEnabledInfo.fieldType = "bool";
     rncEnabledInfo.defaultValue = false;
-    rncEnabledInfo.messageType = MessageType::RNC_OFF;
+    rncEnabledInfo.messageType = MessageType::ANC_SWITCH;
     rncEnabledInfo.description = "RNC enable/disable control";
     mappings_["rnc.enabled"] = rncEnabledInfo;
 
@@ -170,7 +170,7 @@ void ParameterMapper::initializeDefaultMappings() {
     checkModeInfo.protobufPath = "value";
     checkModeInfo.fieldType = "bool";
     checkModeInfo.defaultValue = false;
-    checkModeInfo.messageType = MessageType::CHECK_MODE;
+    checkModeInfo.messageType = MessageType::CHECK_MOD;
     checkModeInfo.description = "System check mode control";
     mappings_["system.check_mode"] = checkModeInfo;
 
@@ -180,7 +180,7 @@ void ParameterMapper::initializeDefaultMappings() {
     alphaInfo.protobufPath = "alpha_value";
     alphaInfo.fieldType = "float";
     alphaInfo.defaultValue = 0.5f;
-    alphaInfo.messageType = MessageType::ALPHA;
+    alphaInfo.messageType = MessageType::ALPHA_PARAMS;
     alphaInfo.description = "Processing alpha parameter";
     mappings_["processing.alpha"] = alphaInfo;
 

@@ -6,19 +6,22 @@
  * 包括配置、使用和监控
  */
 
-#include "buffer/protocol_system_integrator.h"
-#include "adapter/protocol_adapter.h"
-#include "connection/connection_manager.h"
-#include "buffer/protocol_buffer_adapter.h"
+#include "../buffer/protocol_system_integrator.h"
+#include "../adapter/protocol_adapter.h"
+#include "../connection/connection_manager.h"
+#include "../buffer/protocol_buffer_adapter.h"
 
 #include <QCoreApplication>
 #include <QDebug>
 #include <QTimer>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QDateTime>
+#include <QThread>
 #include <memory>
 
 using namespace Protocol::Buffer;
-using namespace Protocol::Adapter;
-using namespace Protocol::Connection;
 
 class IntegrationExample : public QObject
 {
@@ -104,12 +107,12 @@ private:
     {
         // 创建协议适配器（支持ERNC协议）
         protocolAdapter_ = std::make_unique<ProtocolAdapter>(this);
-        
+
         // 加载新的参数映射配置
         protocolAdapter_->loadProtocolMapping("protocol/config/parameter_mapping.json");
 
         // 创建连接管理器
-        connectionManager_ = std::make_unique<ConnectionManager>(this);
+        connectionManager_ = std::make_unique<Protocol::ConnectionManager>(this);
 
         // 创建缓冲适配器
         bufferAdapter_ = std::make_unique<ProtocolBufferAdapter>(2048, this);
@@ -261,13 +264,13 @@ private:
         controlMsg["type"] = "ANC_SWITCH";
         controlMsg["proto_id"] = 151;
         controlMsg["counter"] = counter;
-        
+
         QJsonObject params;
         params["anc_off"] = (counter % 4 == 0);  // 周期性切换ANC
         params["enc_off"] = (counter % 3 == 0);  // 周期性切换ENC
         params["rnc_off"] = (counter % 5 == 0);  // 周期性切换RNC
         controlMsg["params"] = params;
-        
+
         QJsonDocument doc(controlMsg);
         return doc.toJson(QJsonDocument::Compact);
     }
@@ -279,7 +282,7 @@ private:
         sensorData["type"] = "VEHICLE_STATE";
         sensorData["proto_id"] = 138;
         sensorData["counter"] = counter;
-        
+
         QJsonObject vehicleParams;
         vehicleParams["speed"] = 60 + (counter % 80);           // 车速60-140km/h
         vehicleParams["engine_speed"] = 1500 + (counter % 1000); // 发动机转速1500-2500rpm
@@ -287,7 +290,7 @@ private:
         vehicleParams["pressure"] = 1013.25 + (counter % 50);    // 气压
         vehicleParams["timestamp"] = QDateTime::currentMSecsSinceEpoch();
         sensorData["params"] = vehicleParams;
-        
+
         QJsonDocument doc(sensorData);
         return doc.toJson(QJsonDocument::Compact);
     }
@@ -296,7 +299,7 @@ private:
     {
         // 生成RNC参数数据
         QJsonObject regularData;
-        
+
         // 交替生成不同类型的RNC数据
         if (counter % 3 == 0) {
             regularData["type"] = "ALPHA_PARAMS";
@@ -321,7 +324,7 @@ private:
             channelParams["error_num"] = 8 + (counter % 8);
             regularData["params"] = channelParams;
         }
-        
+
         regularData["counter"] = counter;
         QJsonDocument doc(regularData);
         return doc.toJson(QJsonDocument::Compact);
@@ -332,16 +335,16 @@ private:
         // 解析ERNC协议数据
         QJsonParseError parseError;
         QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
-        
+
         if (parseError.error != QJsonParseError::NoError) {
             qDebug() << "Processing raw data (" << data.size() << "bytes)";
             return;
         }
-        
+
         QJsonObject obj = doc.object();
         QString msgType = obj["type"].toString();
         int protoId = obj["proto_id"].toInt();
-        
+
         if (msgType == "ANC_SWITCH") {
             qDebug() << "Processing ANC switch control (ProtoID:" << protoId << ")";
             QJsonObject params = obj["params"].toObject();
@@ -380,7 +383,7 @@ signals:
 
 private:
     std::unique_ptr<ProtocolAdapter> protocolAdapter_;
-    std::unique_ptr<ConnectionManager> connectionManager_;
+    std::unique_ptr<Protocol::ConnectionManager> connectionManager_;
     std::unique_ptr<ProtocolBufferAdapter> bufferAdapter_;
     std::unique_ptr<ProtocolSystemIntegrator> integrator_;
 };

@@ -2,46 +2,15 @@
  * @file usage_example.cpp
  * @brief 重构后的ProtocolAdapter使用示例
  *
- * 展示如何使用新的职责分离架构
+ * 展示如何使用新的职责分离架构，使用真实串口进行测试
  */
 
 #include <QCoreApplication>
 #include <QDebug>
 #include "../adapter/protocol_adapter.h"
-#include "../transport/itransport.h" // 假设存在具体的传输实现
+#include "../transport/serial_transport.h" // 使用真实串口传输实现
 
 using namespace Protocol;
-
-// 模拟传输层实现（用于演示）
-class MockTransport : public ITransport {
-    Q_OBJECT
-public:
-    MockTransport() = default;
-
-    bool open() override {
-        connected_ = true;
-        emit connectionStatusChanged(true);
-        return true;
-    }
-
-    void close() override {
-        connected_ = false;
-        emit connectionStatusChanged(false);
-    }
-
-    bool isConnected() const override { return connected_; }
-
-    bool write(const QByteArray& data) override {
-        qDebug() << "MockTransport: Sending" << data.size() << "bytes";
-        // 模拟发送成功
-        return true;
-    }
-
-    QString transportType() const override { return "Mock"; }
-
-private:
-    bool connected_ = false;
-};
 
 class ProtocolExample : public QObject {
     Q_OBJECT
@@ -70,8 +39,16 @@ private:
     void setupProtocolAdapter() {
         qInfo() << "=== Setting up Protocol Adapter ===";
 
-        // 创建传输层
-        transport_ = new MockTransport();
+        // 创建串口传输层
+        transport_ = new SerialTransport("COM3", 115200); // 根据实际情况修改串口名称和波特率
+
+        // 配置串口参数
+        SerialTransport* serialTransport = static_cast<SerialTransport*>(transport_);
+        serialTransport->setDataBits(QSerialPort::Data8);
+        serialTransport->setParity(QSerialPort::NoParity);
+        serialTransport->setStopBits(QSerialPort::OneStop);
+        serialTransport->setFlowControl(QSerialPort::NoFlowControl);
+        serialTransport->setAutoReconnect(true);
 
         // 创建协议适配器
         adapter_ = new ProtocolAdapter(transport_, this);
@@ -85,7 +62,11 @@ private:
                 this, &ProtocolExample::onConnectionStatusChanged);
 
         // 打开连接
-        transport_->open();
+        if (transport_->open()) {
+            qInfo() << "串口连接成功";
+        } else {
+            qWarning() << "串口连接失败:" << serialTransport->lastErrorString();
+        }
 
         qInfo() << "Protocol version:" << adapter_->getProtocolVersion();
         qInfo() << "Transport:" << adapter_->transportDescription();
@@ -129,19 +110,19 @@ private:
         qInfo() << "4. Sending new parameter group...";
         QStringList paths = {"vehicle.speed", "rnc.alpha1"};
         QVariantMap values;
-        
+
         // 车辆状态参数
         QVariantMap vehicleParams;
         vehicleParams["speed"] = 75;
         vehicleParams["engine_speed"] = 1900;
         values["vehicle.speed"] = vehicleParams;
-        
+
         // RNC参数
         QVariantMap rncParams;
         rncParams["alpha1"] = 110;
         rncParams["alpha2"] = 160;
         values["rnc.alpha1"] = rncParams;
-        
+
         success = adapter_->sendParameterGroup(paths, values);
         qInfo() << "   Result:" << (success ? "Success" : "Failed");
     }
@@ -149,19 +130,17 @@ private:
     void demonstrateAdvancedUsage() {
         qInfo() << "\n=== Advanced Usage Examples ===";
 
-        // 1. 直接访问组件（高级用法）
-        qInfo() << "1. Accessing components directly...";
-        auto parameterMapper = adapter_->parameterMapper();
-        auto messageSerializer = adapter_->messageSerializer();
-        auto connectionManager = adapter_->connectionManager();
-        auto versionManager = adapter_->versionManager();
+        // 1. 使用公共接口（高级用法）
+        qInfo() << "1. Using public interfaces...";
+        // 不再直接访问内部组件，而是使用公共接口
+        // 这些组件现在是ProtocolAdapter的内部实现细节
 
         // 获取协议适配器状态信息
         qInfo() << "   Protocol adapter status:";
         qInfo() << "     Is connected:" << adapter_->isConnected();
         qInfo() << "     Protocol version:" << adapter_->getProtocolVersion();
         qInfo() << "     Transport description:" << adapter_->transportDescription();
-        
+
         // 展示新支持的参数类型
         qInfo() << "   New supported parameter types:";
         qInfo() << "     - ANC/ENC/RNC switches (anc.enabled)";
@@ -175,7 +154,7 @@ private:
         qInfo() << "     Connection status:" << (adapter_->isConnected() ? "Connected" : "Disconnected");
         qInfo() << "     Supported parameters:" << adapter_->getSupportedParameters().size();
         qInfo() << "     Transport type:" << (transport_ ? transport_->transportType() : "None");
-        
+
         // 展示消息类型统计
         qInfo() << "   Message type coverage:";
         qInfo() << "     Total message types: 18";
@@ -195,7 +174,7 @@ private:
         rncParams["alpha1"] = 95;
         rncParams["alpha2"] = 145;
         params["rnc.alpha1"] = rncParams;
-        
+
         QByteArray serializedData = adapter_->serializeParameters(params);
 
         if (!serializedData.isEmpty()) {
@@ -226,7 +205,7 @@ private:
     }
 
 private:
-    MockTransport* transport_ = nullptr;
+    ITransport* transport_ = nullptr;
     ProtocolAdapter* adapter_ = nullptr;
 };
 
@@ -234,12 +213,13 @@ int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    qInfo() << "Protocol Adapter Refactored - Usage Example";
+    qInfo() << "Protocol Adapter Refactored - 串口测试";
     qInfo() << "==========================================";
 
     ProtocolExample example;
 
-    return 0; // 不运行事件循环，直接退出
+    // 运行事件循环，以便接收串口数据
+    return app.exec();
 }
 
 #include "usage_example.moc"
