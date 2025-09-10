@@ -1,0 +1,195 @@
+syntax = "proto3";
+import "nanopb.proto";
+
+// 1. 功能类型枚举（请求/响应）
+enum FunCode {
+    FUN_REQUEST = 0;
+    FUN_RESPONSE = 1;
+}
+
+// 2. 实时数据流相关
+// 通道数量（acc/mic/spk）
+message MSG_ChannelNumber {
+    uint32 ReferNum = 1;  // acc通道数
+    uint32 ErrNum = 2;    // mic通道数
+    uint32 SpkNum = 3;    // spk通道数
+}
+
+// 通道幅值（mic/acc/spk）
+message MSG_ChannelAmplitude {
+    repeated uint32 InputAmplitude = 1 [(nanopb).max_count = 13, (nanopb).fixed_count = true]; // mic/acc幅值
+    uint32 OutputAmplitude = 2; // spk幅值
+}
+
+// 通道开关（ACC/MIC/SPK）
+message MSG_ChannelSwitch {
+    repeated uint32 FInputPoi = 1 [(nanopb).max_count = 20, (nanopb).fixed_count = true];  // ACC/MIC开关
+    repeated uint32 FOutputPoi = 2 [(nanopb).max_count = 8, (nanopb).fixed_count = true];   // SPK开关
+}
+
+//读取实时数据流（1：start，3：end）
+message MSG_CheckMod {
+    uint32 check_mod = 1;
+}
+
+// 3. 车辆CAN信息相关消息
+// ANC/ENC/RNC开关状态
+message MSG_AncSwitch {
+    bool anc_off = 1; // ANC关闭（true=关闭，false=开启）
+    bool enc_off = 2; // ENC关闭（true=关闭，false=开启）
+    bool rnc_off = 3; // RNC关闭（true=关闭，false=开启）
+}
+
+// 车辆状态（车速/转速/空调等）
+message MSG_VehicleState {
+    uint32 speed = 1;        // 车速
+    uint32 EngineSpeed = 2;  // 发动机转速
+    uint32 AC = 3;           // 空调状态
+    uint32 gear = 4;         // 挡位
+    uint32 drive_mod = 5;    // 驾驶模式
+    repeated uint32 door = 6 [(nanopb).max_count = 5, (nanopb).fixed_count = true];    // 车门状态（5个车门，0=关，1=开）
+    repeated uint32 window = 7 [(nanopb).max_count = 4, (nanopb).fixed_count = true];  // 车窗状态（4个车窗，0=关，1=开）
+    repeated uint32 media = 8 [(nanopb).max_count = 8, (nanopb).fixed_count = true];   // 媒体状态（8个参数，自定义含义）
+}
+
+// 4. 传函标定相关消息
+// 传函功能标志（采集/控制）
+message MSG_TranFuncFlag {
+    bool value = 1; // 0=采集传函，1=控制程序
+}
+
+// 传函标定状态
+message MSG_TranFuncState {
+    uint32 value = 1; // 标定状态）
+}
+
+// 滤波器范围配置
+message MSG_FilterRanges {
+    repeated uint32 input_filter = 1 [(nanopb).max_count = 10, (nanopb).fixed_count = true];  // 滤波器输入范围（10个参数）
+    repeated uint32 output_filter = 2 [(nanopb).max_count = 10, (nanopb).fixed_count = true]; // 滤波器输出范围（10个参数）
+}
+
+// 5. 系统配置相关消息
+// 系统阈值配置（RNC/ENC）
+message MSG_SystemRanges {
+    repeated uint32 rnc_system_threshold = 1 [(nanopb).max_count = 18, (nanopb).fixed_count = true]; // RNC系统阈值（18个参数）
+    repeated uint32 enc_system_threshold = 2 [(nanopb).max_count = 18, (nanopb).fixed_count = true]; // ENC系统阈值（18个参数）
+}
+
+// 6. ENC标定相关消息
+// 阶次标志开关
+message MSG_OrderFlag {
+    bool order2 = 1;
+    bool order4 = 2;
+    bool order6 = 3;
+}
+
+// 2阶参数集
+message MSG_Order2Params {
+    repeated uint32 tach_of_amp1 = 1 [(nanopb).max_count = 9, (nanopb).fixed_count = true];
+    repeated uint32 amp1 = 2 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 tach_of_step1 = 3 [(nanopb).max_count = 9, (nanopb).fixed_count = true];
+    repeated uint32 step1 = 4 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 leaky1 = 5 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 err_wei1 = 6; // 2阶误差权重
+    uint32 delta1 = 7;   // 2阶增量
+}
+
+// 4阶参数集
+message MSG_Order4Params {
+    repeated uint32 tach_of_amp2 = 1 [(nanopb).max_count = 9, (nanopb).fixed_count = true];
+    repeated uint32 amp2 = 2 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 tach_of_step2 = 3 [(nanopb).max_count = 9, (nanopb).fixed_count = true];
+    repeated uint32 step2 = 4 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 leaky2 = 5 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 err_wei2 = 6;
+    uint32 delta2 = 7;
+}
+
+// 6阶参数集
+message MSG_Order6Params {
+    repeated uint32 tach_of_amp3 = 1 [(nanopb).max_count = 9, (nanopb).fixed_count = true];
+    repeated uint32 amp3 = 2 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 tach_of_step3 = 3 [(nanopb).max_count = 9, (nanopb).fixed_count = true];
+    repeated uint32 step3 = 4 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    repeated uint32 leaky3 = 5 [(nanopb).max_count = 10, (nanopb).fixed_count = true];
+    uint32 err_wei3 = 6;
+    uint32 delta3 = 7;
+}
+
+// 7. RNC标定相关消息
+// RNC步长参数
+message MSG_AlphaParams {
+    uint32 alpha1 = 1;
+    uint32 alpha2 = 2;
+    uint32 alpha3 = 3;
+    uint32 alpha4 = 4;
+    uint32 alpha5 = 5;
+    uint32 alpha1_10 = 6;
+    uint32 alpha2_10 = 7;
+    uint32 alpha3_10 = 8;
+    uint32 alpha4_10 = 9;
+    uint32 alpha5_10 = 10;
+}
+
+// RNC分频参数
+message MSG_FreqDivision {
+    uint32 fstart_fre_num = 1;
+    uint32 ffirst_fre_num = 2;
+    uint32 fsecond_fre_num = 3;
+    uint32 fthird_fre_num = 4;
+    uint32 fforth_fre_num = 5;
+}
+
+// RNC阈值参数
+message MSG_Thresholds {
+    uint32 input_threshold = 1;
+    uint32 DivThreshold = 2;
+    uint32 horn_power = 3;
+}
+
+// 9. 消息ID枚举
+enum ProtoID {
+    MSG_CHANNEL_NUMBER = 0;
+    MSG_CHANNEL_AMPLITUDE = 25;
+    MSG_CHANNEL_SWITCH = 119;
+    MSG_CHECK_MOD = 150;
+    MSG_ANC_SWITCH = 151;
+    MSG_VEHICLE_STATE = 138;
+    MSG_TRAN_FUNC_FLAG = 153;
+    MSG_TRAN_FUNC_STATE = 154;
+    MSG_FILTER_RANGES = 155;
+    MSG_SYSTEM_RANGES = 157;
+    MSG_ORDER_FLAG = 77;
+    MSG_ORDER2_PARAMS = 78;
+    MSG_ORDER4_PARAMS = 86;
+    MSG_ORDER6_PARAMS = 87;
+    MSG_ALPHA_PARAMS = 158;
+    MSG_FREQ_DIVISION = 27;
+    MSG_THRESHOLDS = 33;
+    MSG_GRAPH_DATA = 156;
+}
+
+message MsgRequestResponse {
+    ProtoID protoID = 1;
+    FunCode funCode = 2;
+    oneof payload {
+        MSG_ChannelNumber msg_channel_number = 3;
+        MSG_ChannelAmplitude msg_channel_amplitude = 4;
+        MSG_ChannelSwitch msg_channel_switch = 5;
+        MSG_CheckMod msg_check_mod = 6;
+        MSG_AncSwitch msg_anc_switch = 7;
+        MSG_VehicleState msg_vehicle_state = 8;
+        MSG_TranFuncFlag msg_tran_func_flag = 9;
+        MSG_TranFuncState msg_tran_func_state = 10;
+        MSG_FilterRanges msg_filter_ranges = 11;
+        MSG_SystemRanges msg_system_ranges = 12;
+        MSG_OrderFlag msg_order_flag = 13;
+        MSG_Order2Params msg_order2_params = 14;
+        MSG_Order4Params msg_order4_params = 15;
+        MSG_Order6Params msg_order6_params = 16;
+        MSG_AlphaParams msg_alpha_params = 17;
+        MSG_FreqDivision msg_freq_division = 18;
+        MSG_Thresholds msg_thresholds = 19;
+    }
+}
