@@ -12,7 +12,7 @@ ApplicationWindow {
     width: 900
     height: 700
     visible: true
-    title: "ERNC Protocol Adapter - Dependency Injection Architecture"
+    title: "ERNC Protocol Adapter v3.0 - Dependency Injection Architecture"
 
     // 协议适配器实例（需要在C++中注册到QML）
     property var protocolAdapter: null
@@ -25,9 +25,17 @@ ApplicationWindow {
 
         // 标题
         Text {
-            text: "ERNC 协议适配器 - 依赖注入架构"
+            text: "ERNC 协议适配器 v3.0 - 依赖注入架构"
             font.pixelSize: 24
             font.bold: true
+            Layout.alignment: Qt.AlignHCenter
+        }
+        
+        // 新版本特性
+        Text {
+            text: "新增: 18种消息类型 | ProtoID: 0-158 | 车辆状态集成 | 层次化参数"
+            font.pixelSize: 12
+            color: "blue"
             Layout.alignment: Qt.AlignHCenter
         }
 
@@ -49,11 +57,15 @@ ApplicationWindow {
                     color: "green"
                 }
                 Text {
-                    text: "✅ 便于单元测试和模拟测试"
+                    text: "✅ 18种新消息类型支持（ANC、车辆状态、通道配置等）"
                     color: "green"
                 }
                 Text {
-                    text: "✅ 运行时可切换传输层"
+                    text: "✅ 层次化参数结构与完整的ProtoID映射"
+                    color: "green"
+                }
+                Text {
+                    text: "✅ 运行时可切换传输层及参数验证"
                     color: "green"
                 }
             }
@@ -214,47 +226,106 @@ ApplicationWindow {
                     font.bold: true
                 }
 
-                // ANC控制
+                // ANC/ENC/RNC控制 (新的参数结构)
                 RowLayout {
-                    Text { text: "ANC控制:" }
+                    Text { text: "ANC/ENC/RNC控制 (ProtoID 151):" }
                     Switch {
                         id: ancSwitch
                         onToggled: {
-                            console.log("Sending ANC parameter:", checked)
-                            // protocolAdapter.sendParameterUpdate("anc.enabled", checked)
+                            console.log("Sending ANC_SWITCH parameter with new structure:")
+                            var ancParams = {
+                                "anc_off": !checked,
+                                "enc_off": !encSwitch.checked,
+                                "rnc_off": !rncSwitch.checked
+                            }
+                            console.log("ANC params:", JSON.stringify(ancParams))
+                            // protocolAdapter.sendParameterUpdate("anc.enabled", ancParams)
                         }
                     }
-                    Text { text: ancSwitch.checked ? "开启" : "关闭" }
+                    Switch {
+                        id: encSwitch
+                        onToggled: {
+                            console.log("ENC toggled:", checked)
+                        }
+                    }
+                    Switch {
+                        id: rncSwitch
+                        onToggled: {
+                            console.log("RNC toggled:", checked)
+                        }
+                    }
+                    Text { text: "ANC:" + (ancSwitch.checked ? "ON" : "OFF") + " ENC:" + (encSwitch.checked ? "ON" : "OFF") + " RNC:" + (rncSwitch.checked ? "ON" : "OFF") }
                 }
 
-                // Alpha参数组
+                // 车辆状态参数 (新增)
                 RowLayout {
-                    Text { text: "Alpha参数组:" }
+                    Text { text: "车辆状态 (ProtoID 138):" }
                     Button {
-                        text: "发送Alpha组"
+                        text: "发送车辆数据"
                         onClicked: {
-                            console.log("Sending Alpha parameter group...")
-                            var paths = ["tuning.alpha.alpha1", "tuning.alpha.alpha2", "tuning.alpha.alpha3"]
-                            var values = {"tuning.alpha.alpha1": 0.5, "tuning.alpha.alpha2": 0.7, "tuning.alpha.alpha3": 0.9}
-                            // protocolAdapter.sendParameterGroup(paths, values)
+                            console.log("Sending VEHICLE_STATE parameter with new structure...")
+                            var vehicleParams = {
+                                "speed": 75,
+                                "engine_speed": 1800
+                            }
+                            console.log("Vehicle params:", JSON.stringify(vehicleParams))
+                            // protocolAdapter.sendParameterUpdate("vehicle.speed", vehicleParams)
+                        }
+                    }
+                }
+                
+                // RNC Alpha参数组 (更新)
+                RowLayout {
+                    Text { text: "RNC Alpha参数 (ProtoID 158):" }
+                    Button {
+                        text: "发送RNC Alpha组"
+                        onClicked: {
+                            console.log("Sending ALPHA_PARAMS with new structure...")
+                            var rncParams = {
+                                "alpha1": 110,
+                                "alpha2": 160,
+                                "alpha3": 210
+                            }
+                            console.log("RNC Alpha params:", JSON.stringify(rncParams))
+                            // protocolAdapter.sendParameterUpdate("rnc.alpha1", rncParams)
+                        }
+                    }
+                }
+                
+                // 通道配置参数 (新增)
+                RowLayout {
+                    Text { text: "通道配置 (ProtoID 0):" }
+                    Button {
+                        text: "配置通道"
+                        onClicked: {
+                            console.log("Sending CHANNEL_NUMBER parameter...")
+                            var channelParams = {
+                                "refer_num": 6,
+                                "error_num": 12
+                            }
+                            console.log("Channel params:", JSON.stringify(channelParams))
+                            // protocolAdapter.sendParameterUpdate("channel.refer_num", channelParams)
                         }
                     }
                 }
 
-                // 协议信息
+                // ERNC协议信息
                 RowLayout {
-                    Text { text: "协议信息:" }
+                    Text { text: "ERNC协议信息:" }
                     Button {
                         text: "查询协议版本"
                         onClicked: {
-                            console.log("Protocol version: 2.1.0")
+                            console.log("ERNC Protocol version: 3.0.0")
+                            console.log("Supported message types: 18")
+                            console.log("ProtoID range: 0-158")
                             // var version = protocolAdapter.getProtocolVersion()
                         }
                     }
                     Button {
-                        text: "查询支持参数"
+                        text: "查询新参数"
                         onClicked: {
-                            console.log("Supported parameters: 15 parameters")
+                            console.log("New ERNC parameters: 70+ hierarchical parameters")
+                            console.log("Key categories: ANC control, Vehicle state, Channel config, RNC params, ENC params")
                             // var params = protocolAdapter.getSupportedParameters()
                         }
                     }
@@ -301,7 +372,7 @@ ApplicationWindow {
                 }
 
                 Text {
-                    text: "💡 提示: 传输层可以在运行时动态切换，协议层逻辑保持不变"
+                    text: "💡 新版本提示: ERNC v3.0支持18种消息类型，传输层可动态切换，层次化参数结构支持复杂配置"
                     color: "blue"
                     font.italic: true
                     wrapMode: Text.WordWrap
@@ -321,8 +392,10 @@ ApplicationWindow {
                 TextArea {
                     id: logArea
                     readOnly: true
-                    text: "=== 依赖注入架构日志 ===\n" +
-                          "✅ 系统初始化完成\n" +
+                    text: "=== ERNC v3.0 依赖注入架构日志 ===\n" +
+                          "✅ ERNC协议系统初始化完成\n" +
+                          "📋 18种消息类型已加载 (ProtoID: 0-158)\n" +
+                          "📋 支持层次化参数结构\n" +
                           "📋 等待用户操作...\n"
                     wrapMode: TextArea.Wrap
                 }
@@ -338,8 +411,10 @@ ApplicationWindow {
     }
 
     Component.onCompleted: {
-        console.log("Dependency Injection Example loaded")
-        logArea.append("🎯 依赖注入架构示例已加载")
+        console.log("ERNC v3.0 Dependency Injection Example loaded")
+        logArea.append("🎯 ERNC v3.0 依赖注入架构示例已加载")
+        logArea.append("💫 新特性: 18种消息类型, 车辆状态集成, 层次化参数")
+        logArea.append("📍 ProtoID范围: 0-158, 支持ANC/ENC/RNC/车辆/通道等全部参数")
         logArea.append("📖 请按照步骤1-4的顺序操作")
     }
 }

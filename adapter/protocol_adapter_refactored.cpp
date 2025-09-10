@@ -27,58 +27,125 @@ ProtocolAdapterRefactored::~ProtocolAdapterRefactored() {
 }
 
 bool ProtocolAdapterRefactored::sendParameterUpdate(const QString& parameterPath, const QVariant& value) {
+    qDebug() << "=== Starting parameter update ===";
+    qDebug() << "Input parameter:" << parameterPath << "=" << value;
+
+    // 检查初始化状态
+    qDebug() << "Checking initialization status...";
     if (!initialized_) {
+        qDebug() << "✗ EARLY RETURN: ProtocolAdapter not initialized";
         qWarning() << "ProtocolAdapter not initialized";
         emit communicationError("ProtocolAdapter not initialized");
         return false;
     }
+    qDebug() << "✓ ProtocolAdapter is initialized";
 
+    // 检查连接状态
+    qDebug() << "Checking connection status...";
     if (!isConnected()) {
+        qDebug() << "✗ EARLY RETURN: Not connected, cannot send parameter update";
         qWarning() << "Not connected, cannot send parameter update";
         emit communicationError("Not connected");
         return false;
     }
+    qDebug() << "✓ Connection is active";
 
     // 检查参数是否支持
+    qDebug() << "Checking parameter support for:" << parameterPath;
     if (!parameterMapper_->isParameterSupported(parameterPath)) {
+        qDebug() << "✗ EARLY RETURN: Parameter not supported:" << parameterPath;
+        qDebug() << "Available parameters:" << parameterMapper_->getSupportedParameters();
         QString error = QString("Unsupported parameter: %1").arg(parameterPath);
         qWarning() << error;
         emit communicationError(error);
         return false;
     }
+    qDebug() << "✓ Parameter is supported";
 
     // 获取参数信息
+    qDebug() << "Getting parameter information for:" << parameterPath;
     auto paramInfo = parameterMapper_->getParameterInfo(parameterPath);
     if (!paramInfo.isValid()) {
+        qDebug() << "✗ EARLY RETURN: Invalid parameter info for:" << parameterPath;
+        qDebug() << "Parameter info details: messageType=" << static_cast<int>(paramInfo.messageType)
+                 << "protobufPath=" << paramInfo.protobufPath;
         QString error = QString("Invalid parameter info for: %1").arg(parameterPath);
         qWarning() << error;
         emit communicationError(error);
         return false;
     }
+    qDebug() << "✓ Parameter info valid - messageType:" << static_cast<int>(paramInfo.messageType)
+             << "protobufPath:" << paramInfo.protobufPath;
 
     // 准备参数映射
     QVariantMap parameters;
     parameters[parameterPath] = value;
 
     // 序列化消息
+    qDebug() << "=== Starting parameter serialization ===";
+    qDebug() << "Parameter path:" << parameterPath;
+    qDebug() << "Message type:" << static_cast<int>(paramInfo.messageType);
+    qDebug() << "Parameter value:" << parameters.value(parameterPath)
+             << QString("(type: %1)").arg(parameters.value(parameterPath).typeName());
+    qDebug() << "Parameter map size:" << parameters.size();
+
+    // 打印完整的参数映射
+    qDebug() << "Complete parameter map:";
+    for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+        qDebug() << "  -" << it.key() << "=" << it.value()
+                 << QString("(type: %1)").arg(it.value().typeName());
+    }
+
+    qDebug() << "Attempting serialization with message serializer...";
     QByteArray data = messageSerializer_->serialize(paramInfo.messageType, parameters);
+
     if (data.isEmpty()) {
+        qDebug() << "✗ SERIALIZATION FAILED";
+        qDebug() << "Failed parameter path:" << parameterPath;
+        qDebug() << "Failed message type:" << static_cast<int>(paramInfo.messageType);
+        qDebug() << "Parameter value that failed:" << parameters.value(parameterPath);
         QString error = QString("Failed to serialize parameter: %1").arg(parameterPath);
         qWarning() << error;
         emit communicationError(error);
         return false;
     }
 
+    qDebug() << "✓ SERIALIZATION SUCCESSFUL";
+    qDebug() << "Serialized data size:" << data.size() << "bytes";
+    qDebug() << "Serialized data (hex):" << data.toHex(' ');
+    qDebug() << "First 16 bytes:" << data.left(16).toHex(' ');
+
     // 发送数据
+    qDebug() << "=== Starting data transmission ===";
+    qDebug() << "Sending data via connection manager...";
+    qDebug() << "Data to send size:" << data.size() << "bytes";
     bool success = connectionManager_->sendData(data);
+
+    qDebug() << "=== Data transmission result ===";
     if (success) {
+        qDebug() << "✓ TRANSMISSION SUCCESSFUL";
+        qDebug() << "Successfully sent parameter:" << parameterPath;
+        qDebug() << "Parameter value:" << value;
+        qDebug() << "Message type:" << static_cast<int>(paramInfo.messageType);
+        qDebug() << "Data size transmitted:" << data.size() << "bytes";
+        qDebug() << "Emitting parameterAcknowledged signal for:" << parameterPath;
         qDebug() << "Parameter update sent successfully:" << parameterPath << "=" << value;
         emit parameterAcknowledged(parameterPath);
+        qDebug() << "✓ Parameter acknowledgment signal emitted";
     } else {
+        qDebug() << "✗ TRANSMISSION FAILED";
+        qDebug() << "Failed to send parameter:" << parameterPath;
+        qDebug() << "Parameter value:" << value;
+        qDebug() << "Message type:" << static_cast<int>(paramInfo.messageType);
+        qDebug() << "Data size that failed:" << data.size() << "bytes";
+        qDebug() << "Failed data (hex):" << data.toHex(' ');
         QString error = QString("Failed to send parameter update: %1").arg(parameterPath);
         qWarning() << error;
+        qDebug() << "Emitting communicationError signal with error:" << error;
         emit communicationError(error);
     }
+    qDebug() << "=== End of parameter transmission ===";
+    qDebug() << "";
 
     return success;
 }

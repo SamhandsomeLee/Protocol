@@ -50,6 +50,7 @@ ProtocolAdapter::~ProtocolAdapter()
 
 bool ProtocolAdapter::sendParameterUpdate(const QString& parameterPath, const QVariant& value)
 {
+    qDebug() << "===ProtocolAdapter Starting parameter update ===";
     if (!isConnected()) {
         emit communicationError("Transport not connected");
         return false;

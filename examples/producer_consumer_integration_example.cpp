@@ -8,7 +8,6 @@
 
 #include "buffer/protocol_system_integrator.h"
 #include "adapter/protocol_adapter.h"
-#include "adapter/protocol_adapter_refactored.h"
 #include "connection/connection_manager.h"
 #include "buffer/protocol_buffer_adapter.h"
 
@@ -35,7 +34,10 @@ public:
 
     void runExample()
     {
-        qInfo() << "=== Starting Producer-Consumer Integration Example ===";
+        qInfo() << "=== Starting ERNC Producer-Consumer Integration Example ===";
+        qInfo() << "Protocol version:" << (protocolAdapter_ ? protocolAdapter_->getProtocolVersion() : "Unknown");
+        qInfo() << "Supported message types: 18 (ProtoID range: 0-158)";
+        qInfo() << "New features: ANC/ENC/RNC control, Vehicle state, Channel config, RNC params";
 
         // 启动集成系统
         integrator_->startIntegration();
@@ -100,8 +102,11 @@ private slots:
 private:
     void setupComponents()
     {
-        // 创建协议适配器
+        // 创建协议适配器（支持ERNC协议）
         protocolAdapter_ = std::make_unique<ProtocolAdapter>(this);
+        
+        // 加载新的参数映射配置
+        protocolAdapter_->loadProtocolMapping("protocol/config/parameter_mapping.json");
 
         // 创建连接管理器
         connectionManager_ = std::make_unique<ConnectionManager>(this);
@@ -251,34 +256,109 @@ private:
 
     QByteArray generateControlMessage(int counter)
     {
-        return QString("CTRL_%1:enable_anc=true").arg(counter).toUtf8();
+        // 生成新的ERNC控制消息格式
+        QJsonObject controlMsg;
+        controlMsg["type"] = "ANC_SWITCH";
+        controlMsg["proto_id"] = 151;
+        controlMsg["counter"] = counter;
+        
+        QJsonObject params;
+        params["anc_off"] = (counter % 4 == 0);  // 周期性切换ANC
+        params["enc_off"] = (counter % 3 == 0);  // 周期性切换ENC
+        params["rnc_off"] = (counter % 5 == 0);  // 周期性切换RNC
+        controlMsg["params"] = params;
+        
+        QJsonDocument doc(controlMsg);
+        return doc.toJson(QJsonDocument::Compact);
     }
 
     QByteArray generateSensorData(int counter)
     {
-        // 模拟传感器数据包
-        QByteArray data;
-        data.append("SENSOR_DATA:");
-        data.append(QString("temp=%1,").arg(20.0 + (counter % 100) / 10.0));
-        data.append(QString("pressure=%1,").arg(1013.25 + (counter % 50)));
-        data.append(QString("timestamp=%1").arg(QDateTime::currentMSecsSinceEpoch()));
-        return data;
+        // 生成ERNC车辆状态数据
+        QJsonObject sensorData;
+        sensorData["type"] = "VEHICLE_STATE";
+        sensorData["proto_id"] = 138;
+        sensorData["counter"] = counter;
+        
+        QJsonObject vehicleParams;
+        vehicleParams["speed"] = 60 + (counter % 80);           // 车速60-140km/h
+        vehicleParams["engine_speed"] = 1500 + (counter % 1000); // 发动机转速1500-2500rpm
+        vehicleParams["temperature"] = 20.0 + (counter % 50) / 10.0; // 温度
+        vehicleParams["pressure"] = 1013.25 + (counter % 50);    // 气压
+        vehicleParams["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+        sensorData["params"] = vehicleParams;
+        
+        QJsonDocument doc(sensorData);
+        return doc.toJson(QJsonDocument::Compact);
     }
 
     QByteArray generateRegularData(int counter)
     {
-        return QString("Regular message %1 with some payload data").arg(counter).toUtf8();
+        // 生成RNC参数数据
+        QJsonObject regularData;
+        
+        // 交替生成不同类型的RNC数据
+        if (counter % 3 == 0) {
+            regularData["type"] = "ALPHA_PARAMS";
+            regularData["proto_id"] = 158;
+            QJsonObject alphaParams;
+            alphaParams["alpha1"] = 50 + (counter % 100);
+            alphaParams["alpha2"] = 75 + (counter % 150);
+            alphaParams["alpha3"] = 100 + (counter % 200);
+            regularData["params"] = alphaParams;
+        } else if (counter % 3 == 1) {
+            regularData["type"] = "FREQ_DIVISION";
+            regularData["proto_id"] = 27;
+            QJsonObject freqParams;
+            freqParams["division_factor"] = 2 + (counter % 8);
+            freqParams["cutoff_freq"] = 100 + (counter % 400);
+            regularData["params"] = freqParams;
+        } else {
+            regularData["type"] = "CHANNEL_NUMBER";
+            regularData["proto_id"] = 0;
+            QJsonObject channelParams;
+            channelParams["refer_num"] = 4 + (counter % 4);
+            channelParams["error_num"] = 8 + (counter % 8);
+            regularData["params"] = channelParams;
+        }
+        
+        regularData["counter"] = counter;
+        QJsonDocument doc(regularData);
+        return doc.toJson(QJsonDocument::Compact);
     }
 
     void processIncomingProtocolData(const QByteArray& data)
     {
-        // 模拟协议数据解析
-        if (data.startsWith("CTRL_")) {
-            qDebug() << "Processing control message";
-        } else if (data.startsWith("SENSOR_DATA:")) {
-            qDebug() << "Processing sensor data";
+        // 解析ERNC协议数据
+        QJsonParseError parseError;
+        QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+        
+        if (parseError.error != QJsonParseError::NoError) {
+            qDebug() << "Processing raw data (" << data.size() << "bytes)";
+            return;
+        }
+        
+        QJsonObject obj = doc.object();
+        QString msgType = obj["type"].toString();
+        int protoId = obj["proto_id"].toInt();
+        
+        if (msgType == "ANC_SWITCH") {
+            qDebug() << "Processing ANC switch control (ProtoID:" << protoId << ")";
+            QJsonObject params = obj["params"].toObject();
+            qDebug() << "  ANC:" << (!params["anc_off"].toBool() ? "ON" : "OFF");
+            qDebug() << "  ENC:" << (!params["enc_off"].toBool() ? "ON" : "OFF");
+            qDebug() << "  RNC:" << (!params["rnc_off"].toBool() ? "ON" : "OFF");
+        } else if (msgType == "VEHICLE_STATE") {
+            qDebug() << "Processing vehicle state (ProtoID:" << protoId << ")";
+            QJsonObject params = obj["params"].toObject();
+            qDebug() << "  Speed:" << params["speed"].toInt() << "km/h";
+            qDebug() << "  Engine:" << params["engine_speed"].toInt() << "rpm";
+        } else if (msgType == "ALPHA_PARAMS") {
+            qDebug() << "Processing RNC alpha parameters (ProtoID:" << protoId << ")";
+        } else if (msgType == "CHANNEL_NUMBER") {
+            qDebug() << "Processing channel configuration (ProtoID:" << protoId << ")";
         } else {
-            qDebug() << "Processing regular data";
+            qDebug() << "Processing unknown message type:" << msgType;
         }
     }
 

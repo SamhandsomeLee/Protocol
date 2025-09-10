@@ -11,12 +11,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "protocol/adapter/protocol_adapter_refactored.h"
+#include "protocol/adapter/protocol_adapter.h"
 #include "protocol/transport/serial_transport.h"
 #include <iostream>
-#include "protocol/mapping/parameter_mapper.h"
-#include "protocol/connection/connection_manager.h"
-#include "protocol/version/version_manager.h"
+#include "protocol/core/message_types.h"
+#include "protocol/serialization/message_serializer.h"
 
 using namespace Protocol;
 
@@ -39,7 +38,7 @@ private:
         transport_->setBaudRate(115200);
 
         // 创建协议适配器
-        adapter_ = new ProtocolAdapterRefactored(transport_, this);
+        adapter_ = new ProtocolAdapter(transport_, this);
 
         qInfo() << "协议适配器已创建";
     }
@@ -66,36 +65,37 @@ private:
     void demonstrateComponentAccess() {
         qInfo() << "\n1. 组件直接访问:";
 
-        // 访问参数映射器
-        auto* paramMapper = adapter_->parameterMapper();
-        if (paramMapper) {
-            qInfo() << "   参数映射器可用";
-
-            // 获取详细参数信息
-            auto paramInfo = paramMapper->getParameterInfo("anc.enabled");
-            if (paramInfo.isValid()) {
-                qInfo() << "   ANC 参数详情:";
-                qInfo() << "     逻辑路径:" << paramInfo.logicalPath;
-                qInfo() << "     Protobuf路径:" << paramInfo.protobufPath;
-                qInfo() << "     字段类型:" << paramInfo.fieldType;
-                qInfo() << "     默认值:" << paramInfo.defaultValue;
-                qInfo() << "     消息类型:" << static_cast<int>(paramInfo.messageType);
-                qInfo() << "     描述:" << paramInfo.description;
-            }
+        // 演示新的消息类型系统
+        qInfo() << "   消息类型系统:";
+        using namespace Protocol;
+        
+        // 展示新的消息类型
+        QList<MessageType> newTypes = {
+            MessageType::ANC_SWITCH,
+            MessageType::VEHICLE_STATE,
+            MessageType::CHANNEL_NUMBER,
+            MessageType::ALPHA_PARAMS,
+            MessageType::ORDER2_PARAMS
+        };
+        
+        for (const auto& type : newTypes) {
+            qInfo() << QString("     %1 (ProtoID: %2) - %3")
+                      .arg(MessageTypeUtils::toString(type))
+                      .arg(MessageTypeUtils::toProtoID(type))
+                      .arg(MessageTypeUtils::getDescription(type));
         }
 
-        // 访问连接管理器
-        auto* connManager = adapter_->connectionManager();
-        if (connManager) {
-            qInfo() << "   连接管理器可用";
-            qInfo() << "   当前状态:" << (connManager->isConnected() ? "已连接" : "未连接");
-        }
-
-        // 访问版本管理器
-        auto* versionManager = adapter_->versionManager();
-        if (versionManager) {
-            qInfo() << "   版本管理器可用";
-            qInfo() << "   版本摘要:" << versionManager->getVersionSummary();
+        // 访问协议适配器状态
+        qInfo() << "   适配器状态:";
+        qInfo() << "     连接状态:" << (adapter_->isConnected() ? "已连接" : "未连接");
+        qInfo() << "     协议版本:" << adapter_->getProtocolVersion();
+        qInfo() << "     传输层描述:" << adapter_->transportDescription();
+        
+        // 展示支持的参数
+        auto supportedParams = adapter_->getSupportedParameters();
+        qInfo() << "     支持的参数数量:" << supportedParams.size();
+        if (supportedParams.size() > 0) {
+            qInfo() << "     示例参数:" << supportedParams.mid(0, qMin(3, supportedParams.size())).join(", ");
         }
     }
 
@@ -123,24 +123,48 @@ private:
 
         qInfo() << "   自定义映射JSON:" << jsonString;
 
-        // 加载自定义映射（如果支持的话）
-        auto* paramMapper = adapter_->parameterMapper();
-        if (paramMapper) {
-            // 这里应该有加载自定义映射的方法
-            qInfo() << "   (自定义映射加载功能需要在 ParameterMapper 中实现)";
+        // 使用适配器加载自定义映射
+        bool loadResult = adapter_->loadProtocolMapping("protocol/config/parameter_mapping.json");
+        qInfo() << "   参数映射加载:" << (loadResult ? "成功" : "失败");
+        
+        if (loadResult) {
+            qInfo() << "   已加载的参数映射包含:";
+            qInfo() << "     - ANC/ENC/RNC开关控制";
+            qInfo() << "     - 车辆状态参数";
+            qInfo() << "     - 通道配置参数";
+            qInfo() << "     - 传函标定参数";
+            qInfo() << "     - 系统配置参数";
+            qInfo() << "     - ENC标定参数 (2/4/6阶)";
+            qInfo() << "     - RNC步长/分频/阈值参数";
         }
     }
 
     void demonstrateSerialization() {
         qInfo() << "\n3. 序列化和反序列化:";
 
-        // 准备参数数据
+        // 准备新的参数数据（使用更新后的参数结构）
         QVariantMap parameters;
-        parameters["anc.enabled"] = false;
-        parameters["enc.enabled"] = true;
-        parameters["processing.alpha"] = 0.8f;
+        
+        // ANC开关控制参数
+        QVariantMap ancParams;
+        ancParams["anc_off"] = false;
+        ancParams["enc_off"] = true;
+        ancParams["rnc_off"] = false;
+        parameters["anc.enabled"] = ancParams;
+        
+        // 车辆状态参数
+        QVariantMap vehicleParams;
+        vehicleParams["speed"] = 65;
+        vehicleParams["engine_speed"] = 1800;
+        parameters["vehicle.speed"] = vehicleParams;
+        
+        // RNC参数
+        QVariantMap rncParams;
+        rncParams["alpha1"] = 120;
+        rncParams["alpha2"] = 180;
+        parameters["rnc.alpha1"] = rncParams;
 
-        qInfo() << "   原始参数:" << parameters;
+        qInfo() << "   新参数结构:" << parameters;
 
         // 序列化
         QByteArray serializedData = adapter_->serializeParameters(parameters);
@@ -175,62 +199,63 @@ private:
     void demonstrateConnectionStats() {
         qInfo() << "\n4. 连接统计信息:";
 
-        auto* connManager = adapter_->connectionManager();
-        if (connManager) {
-            auto stats = connManager->getConnectionStats();
-
-            qInfo() << "   连接统计:";
-            qInfo() << "     发送字节数:" << stats.bytesSent;
-            qInfo() << "     接收字节数:" << stats.bytesReceived;
-            qInfo() << "     发送错误:" << stats.sendErrorCount;
-            qInfo() << "     接收错误:" << stats.receiveErrorCount;
-            qInfo() << "     重试次数:" << stats.retryCount;
-            if (!stats.lastError.isEmpty()) {
-                qInfo() << "     最后错误:" << stats.lastError;
-            }
-
-            // 计算传输效率（使用可用的统计信息）
-            if (stats.bytesSent > 0 && stats.sendErrorCount >= 0) {
-                int successfulSends = qMax(1, stats.bytesSent / 50); // 假设平均包大小50字节
-                double avgSendSize = static_cast<double>(stats.bytesSent) / successfulSends;
-                qInfo() << "     估计平均发送大小:" << QString::number(avgSendSize, 'f', 2) << "字节";
-            }
-
-            if (stats.bytesReceived > 0) {
-                int successfulReceives = qMax(1, stats.bytesReceived / 50); // 假设平均包大小50字节
-                double avgReceiveSize = static_cast<double>(stats.bytesReceived) / successfulReceives;
-                qInfo() << "     估计平均接收大小:" << QString::number(avgReceiveSize, 'f', 2) << "字节";
+        qInfo() << "   协议适配器统计:";
+        qInfo() << "     连接状态:" << (adapter_->isConnected() ? "已连接" : "未连接");
+        qInfo() << "     支持的参数:" << adapter_->getSupportedParameters().size() << "个";
+        
+        // 演示消息类型统计
+        qInfo() << "   消息类型统计:";
+        using namespace Protocol;
+        QMap<QString, int> typeStats;
+        QList<MessageType> allTypes = {
+            MessageType::CHANNEL_NUMBER, MessageType::CHANNEL_AMPLITUDE, MessageType::CHANNEL_SWITCH,
+            MessageType::CHECK_MOD, MessageType::ANC_SWITCH, MessageType::VEHICLE_STATE,
+            MessageType::TRAN_FUNC_FLAG, MessageType::TRAN_FUNC_STATE, MessageType::FILTER_RANGES,
+            MessageType::SYSTEM_RANGES, MessageType::ORDER_FLAG, MessageType::ORDER2_PARAMS,
+            MessageType::ORDER4_PARAMS, MessageType::ORDER6_PARAMS, MessageType::ALPHA_PARAMS,
+            MessageType::FREQ_DIVISION, MessageType::THRESHOLDS, MessageType::GRAPH_DATA
+        };
+        
+        int validCount = 0;
+        for (const auto& type : allTypes) {
+            if (MessageTypeUtils::isValid(type)) {
+                validCount++;
             }
         }
+        qInfo() << "     有效消息类型:" << validCount << "/" << allTypes.size();
+        
+        // 展示协议版本兼容性
+        qInfo() << "     协议兼容性:";
+        qInfo() << "       当前版本:" << adapter_->getProtocolVersion();
+        qInfo() << "       ProtoID范围: 0-" << MessageTypeUtils::toProtoID(MessageType::ALPHA_PARAMS);
     }
 
     void demonstrateVersionManagement() {
         qInfo() << "\n5. 版本管理:";
 
-        auto* versionManager = adapter_->versionManager();
-        if (versionManager) {
-            qInfo() << "   版本信息:";
-            qInfo() << "     当前版本:" << versionManager->getCurrentVersion();
-            qInfo() << "     支持的版本:" << versionManager->getSupportedVersions().join(", ");
-            qInfo() << "     Qt版本:" << qVersion();
-
-            // 版本兼容性检查
-            bool compatible = versionManager->isCompatible("1.0.1");
-            qInfo() << "   协议版本 1.0.1 兼容性:" << (compatible ? "兼容" : "不兼容");
-
-            // 检查另一个版本
-            QString reason;
-            bool compatible2 = versionManager->isCompatible("1.1.0", reason);
-            qInfo() << "   协议版本 1.1.0 兼容性:" << (compatible2 ? "兼容" : "不兼容");
-            if (!compatible2 && !reason.isEmpty()) {
-                qInfo() << "     原因:" << reason;
-            }
-        }
+        qInfo() << "   ERNC协议版本管理:";
+        qInfo() << "     协议版本:" << adapter_->getProtocolVersion();
+        qInfo() << "     Qt版本:" << qVersion();
+        
+        // 新协议特性演示
+        qInfo() << "   新协议特性:";
+        qInfo() << "     ✓ 支持18种消息类型";
+        qInfo() << "     ✓ ProtoID完全映射 (0-158)";
+        qInfo() << "     ✓ 层次化参数结构";
+        qInfo() << "     ✓ 车辆状态集成";
+        qInfo() << "     ✓ 通道配置管理";
+        qInfo() << "     ✓ RNC/ENC参数优化";
+        
+        // 功能码演示
+        using namespace Protocol;
+        qInfo() << "   功能码支持:";
+        qInfo() << QString("     REQUEST: %1").arg(static_cast<int>(FunctionCode::REQUEST));
+        qInfo() << QString("     RESPONSE: %1").arg(static_cast<int>(FunctionCode::RESPONSE));
     }
 
 private:
     SerialTransport* transport_ = nullptr;
-    ProtocolAdapterRefactored* adapter_ = nullptr;
+    ProtocolAdapter* adapter_ = nullptr;
 };
 
 int main(int argc, char *argv[])

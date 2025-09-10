@@ -1,201 +1,523 @@
 {
-  "version": "1.0.0",
-  "protocolVersion": "2.1.0",
-  "description": "ERNC协议参数映射配置",
+  "version": "2.0.0",
+  "protocolVersion": "ERNC_3.0.0",
+  "description": "ERNC协议参数映射配置 - 基于ERNC_praram.proto",
   "mappings": {
-    "anc.enabled": {
-      "protobufPath": "value",
-      "fieldType": "bool",
-      "defaultValue": false,
-      "messageType": "ANC_OFF",
+    "channel.refer_num": {
+      "protobufPath": "ReferNum",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "CHANNEL_NUMBER",
       "deprecated": false,
-      "description": "ANC主动降噪开关"
+      "description": "acc通道数"
+    },
+    "channel.err_num": {
+      "protobufPath": "ErrNum",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "CHANNEL_NUMBER",
+      "deprecated": false,
+      "description": "mic通道数"
+    },
+    "channel.spk_num": {
+      "protobufPath": "SpkNum",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "CHANNEL_NUMBER",
+      "deprecated": false,
+      "description": "spk通道数"
+    },
+    "channel.input_amplitude": {
+      "protobufPath": "InputAmplitude",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "CHANNEL_AMPLITUDE",
+      "maxCount": 13,
+      "deprecated": false,
+      "description": "mic/acc幅值数组"
+    },
+    "channel.output_amplitude": {
+      "protobufPath": "OutputAmplitude",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "CHANNEL_AMPLITUDE",
+      "deprecated": false,
+      "description": "spk幅值"
+    },
+    "channel.input_switch": {
+      "protobufPath": "FInputPoi",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "CHANNEL_SWITCH",
+      "maxCount": 20,
+      "deprecated": false,
+      "description": "ACC/MIC开关数组"
+    },
+    "channel.output_switch": {
+      "protobufPath": "FOutputPoi",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "CHANNEL_SWITCH",
+      "maxCount": 8,
+      "deprecated": false,
+      "description": "SPK开关数组"
+    },
+    "system.check_mod": {
+      "protobufPath": "check_mod",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "CHECK_MOD",
+      "deprecated": false,
+      "description": "实时数据流控制（1：start，3：end）"
+    },
+
+    "anc.enabled": {
+      "protobufPath": "anc_off",
+      "fieldType": "bool",
+      "defaultValue": true,
+      "messageType": "ANC_SWITCH",
+      "deprecated": false,
+      "description": "ANC开关（true=关闭，false=开启）"
     },
     "enc.enabled": {
-      "protobufPath": "value",
+      "protobufPath": "enc_off",
       "fieldType": "bool",
-      "defaultValue": false,
-      "messageType": "ENC_OFF",
+      "defaultValue": true,
+      "messageType": "ANC_SWITCH",
       "deprecated": false,
-      "description": "ENC发动机噪声消除开关"
+      "description": "ENC开关（true=关闭，false=开启）"
     },
     "rnc.enabled": {
+      "protobufPath": "rnc_off",
+      "fieldType": "bool",
+      "defaultValue": true,
+      "messageType": "ANC_SWITCH",
+      "deprecated": false,
+      "description": "RNC开关（true=关闭，false=开启）"
+    },
+
+    "vehicle.speed": {
+      "protobufPath": "speed",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "VEHICLE_STATE",
+      "deprecated": false,
+      "description": "车速"
+    },
+    "vehicle.engine_speed": {
+      "protobufPath": "EngineSpeed",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "VEHICLE_STATE",
+      "deprecated": false,
+      "description": "发动机转速"
+    },
+    "vehicle.ac": {
+      "protobufPath": "AC",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "VEHICLE_STATE",
+      "deprecated": false,
+      "description": "空调状态"
+    },
+    "vehicle.gear": {
+      "protobufPath": "gear",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "VEHICLE_STATE",
+      "deprecated": false,
+      "description": "挡位"
+    },
+    "vehicle.drive_mod": {
+      "protobufPath": "drive_mod",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "VEHICLE_STATE",
+      "deprecated": false,
+      "description": "驾驶模式"
+    },
+    "vehicle.doors": {
+      "protobufPath": "door",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "VEHICLE_STATE",
+      "maxCount": 5,
+      "deprecated": false,
+      "description": "车门状态（5个车门）"
+    },
+    "vehicle.windows": {
+      "protobufPath": "window",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "VEHICLE_STATE",
+      "maxCount": 4,
+      "deprecated": false,
+      "description": "车窗状态（4个车窗）"
+    },
+
+    "transfer_function.flag": {
       "protobufPath": "value",
       "fieldType": "bool",
       "defaultValue": false,
-      "messageType": "RNC_OFF",
+      "messageType": "TRAN_FUNC_FLAG",
       "deprecated": false,
-      "description": "RNC路噪消除开关"
+      "description": "传函功能标志（0=采集传函，1=控制程序）"
     },
-    "system.check_mode": {
+    "transfer_function.state": {
       "protobufPath": "value",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "TRAN_FUNC_STATE",
+      "deprecated": false,
+      "description": "传函标定状态"
+    },
+    "filter.input_ranges": {
+      "protobufPath": "input_filter",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "FILTER_RANGES",
+      "maxCount": 10,
+      "deprecated": false,
+      "description": "滤波器输入范围"
+    },
+    "filter.output_ranges": {
+      "protobufPath": "output_filter",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "FILTER_RANGES",
+      "maxCount": 10,
+      "deprecated": false,
+      "description": "滤波器输出范围"
+    },
+
+    "system.rnc_thresholds": {
+      "protobufPath": "rnc_system_threshold",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "SYSTEM_RANGES",
+      "maxCount": 18,
+      "deprecated": false,
+      "description": "RNC系统阈值"
+    },
+    "system.enc_thresholds": {
+      "protobufPath": "enc_system_threshold",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "SYSTEM_RANGES",
+      "maxCount": 18,
+      "deprecated": false,
+      "description": "ENC系统阈值"
+    },
+
+    "enc.order2_enabled": {
+      "protobufPath": "order2",
       "fieldType": "bool",
       "defaultValue": false,
-      "messageType": "CHECK_MODE",
+      "messageType": "ORDER_FLAG",
       "deprecated": false,
-      "description": "系统检测模式"
+      "description": "2阶开关"
     },
-    "tuning.alpha.alpha1": {
+    "enc.order4_enabled": {
+      "protobufPath": "order4",
+      "fieldType": "bool",
+      "defaultValue": false,
+      "messageType": "ORDER_FLAG",
+      "deprecated": false,
+      "description": "4阶开关"
+    },
+    "enc.order6_enabled": {
+      "protobufPath": "order6",
+      "fieldType": "bool",
+      "defaultValue": false,
+      "messageType": "ORDER_FLAG",
+      "deprecated": false,
+      "description": "6阶开关"
+    },
+
+    "enc.order2.tach_of_amp1": {
+      "protobufPath": "tach_of_amp1",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "ORDER2_PARAMS",
+      "maxCount": 9,
+      "deprecated": false,
+      "description": "2阶转速对应幅值1"
+    },
+    "enc.order2.amp1": {
+      "protobufPath": "amp1",
+      "fieldType": "repeated_uint32",
+      "defaultValue": [],
+      "messageType": "ORDER2_PARAMS",
+      "maxCount": 10,
+      "deprecated": false,
+      "description": "2阶幅值1"
+    },
+    "enc.order2.err_wei1": {
+      "protobufPath": "err_wei1",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ORDER2_PARAMS",
+      "deprecated": false,
+      "description": "2阶误差权重"
+    },
+    "enc.order2.delta1": {
+      "protobufPath": "delta1",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "ORDER2_PARAMS",
+      "deprecated": false,
+      "description": "2阶增量"
+    },
+
+    "rnc.alpha1": {
       "protobufPath": "alpha1",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数1"
+      "description": "RNC步长参数alpha1"
     },
-    "tuning.alpha.alpha2": {
+    "rnc.alpha2": {
       "protobufPath": "alpha2",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数2"
+      "description": "RNC步长参数alpha2"
     },
-    "tuning.alpha.alpha3": {
+    "rnc.alpha3": {
       "protobufPath": "alpha3",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数3"
+      "description": "RNC步长参数alpha3"
     },
-    "tuning.alpha.alpha4": {
+    "rnc.alpha4": {
       "protobufPath": "alpha4",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数4"
+      "description": "RNC步长参数alpha4"
     },
-    "tuning.alpha.alpha5": {
+    "rnc.alpha5": {
       "protobufPath": "alpha5",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数5"
+      "description": "RNC步长参数alpha5"
     },
-    "tuning.alpha.alpha1_10": {
+    "rnc.alpha1_10": {
       "protobufPath": "alpha1_10",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数1_10"
+      "description": "RNC步长参数alpha1_10"
     },
-    "tuning.alpha.alpha2_10": {
+    "rnc.alpha2_10": {
       "protobufPath": "alpha2_10",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数2_10"
+      "description": "RNC步长参数alpha2_10"
     },
-    "tuning.alpha.alpha3_10": {
+    "rnc.alpha3_10": {
       "protobufPath": "alpha3_10",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数3_10"
+      "description": "RNC步长参数alpha3_10"
     },
-    "tuning.alpha.alpha4_10": {
+    "rnc.alpha4_10": {
       "protobufPath": "alpha4_10",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数4_10"
+      "description": "RNC步长参数alpha4_10"
     },
-    "tuning.alpha.alpha5_10": {
+    "rnc.alpha5_10": {
       "protobufPath": "alpha5_10",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "ALPHA",
+      "messageType": "ALPHA_PARAMS",
       "deprecated": false,
-      "description": "Alpha参数5_10"
+      "description": "RNC步长参数alpha5_10"
     },
-    "tuning.set1.gamma": {
-      "protobufPath": "gamma",
+
+    "rnc.fstart_fre_num": {
+      "protobufPath": "fstart_fre_num",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "SET1",
+      "messageType": "FREQ_DIVISION",
       "deprecated": false,
-      "description": "Gamma参数"
+      "description": "起始频率数量"
     },
-    "tuning.set1.eta": {
-      "protobufPath": "eta",
+    "rnc.ffirst_fre_num": {
+      "protobufPath": "ffirst_fre_num",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "SET1",
+      "messageType": "FREQ_DIVISION",
       "deprecated": false,
-      "description": "Eta参数"
+      "description": "第一频率数量"
     },
-    "tuning.set1.delta": {
-      "protobufPath": "delta",
+    "rnc.fsecond_fre_num": {
+      "protobufPath": "fsecond_fre_num",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "SET1",
+      "messageType": "FREQ_DIVISION",
       "deprecated": false,
-      "description": "Delta参数"
+      "description": "第二频率数量"
     },
-    "tuning.set1.refer_num": {
-      "protobufPath": "refer_num",
+    "rnc.fthird_fre_num": {
+      "protobufPath": "fthird_fre_num",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "SET1",
+      "messageType": "FREQ_DIVISION",
       "deprecated": false,
-      "description": "参考数量"
+      "description": "第三频率数量"
     },
-    "tuning.set1.spk_num": {
-      "protobufPath": "spk_num",
+    "rnc.fforth_fre_num": {
+      "protobufPath": "fforth_fre_num",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "SET1",
+      "messageType": "FREQ_DIVISION",
       "deprecated": false,
-      "description": "扬声器数量"
+      "description": "第四频率数量"
     },
-    "tuning.set1.output_amplitude": {
-      "protobufPath": "output_amplitude",
+
+    "rnc.input_threshold": {
+      "protobufPath": "input_threshold",
       "fieldType": "uint32",
       "defaultValue": 0,
-      "messageType": "SET1",
+      "messageType": "THRESHOLDS",
       "deprecated": false,
-      "description": "输出幅度"
+      "description": "输入阈值"
+    },
+    "rnc.div_threshold": {
+      "protobufPath": "DivThreshold",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "THRESHOLDS",
+      "deprecated": false,
+      "description": "分割阈值"
+    },
+    "rnc.horn_power": {
+      "protobufPath": "horn_power",
+      "fieldType": "uint32",
+      "defaultValue": 0,
+      "messageType": "THRESHOLDS",
+      "deprecated": false,
+      "description": "喇叭功率"
     }
   },
+
   "messageTypes": {
-    "ANC_OFF": {
-      "description": "ANC控制消息",
-      "protoID": 0
+    "CHANNEL_NUMBER": {
+      "description": "通道数量配置",
+      "protoID": 0,
+      "category": "realtime"
     },
-    "ENC_OFF": {
-      "description": "ENC控制消息",
-      "protoID": 1
+    "CHANNEL_AMPLITUDE": {
+      "description": "通道幅值配置",
+      "protoID": 25,
+      "category": "realtime"
     },
-    "RNC_OFF": {
-      "description": "RNC控制消息",
-      "protoID": 2
+    "CHANNEL_SWITCH": {
+      "description": "通道开关配置",
+      "protoID": 119,
+      "category": "realtime"
     },
-    "CHECK_MODE": {
-      "description": "检测模式消息",
-      "protoID": 3
+    "CHECK_MOD": {
+      "description": "实时数据流控制",
+      "protoID": 150,
+      "category": "realtime"
     },
-    "CALIBRATION_AMP": {
-      "description": "校准幅度消息",
-      "protoID": 4
+    "ANC_SWITCH": {
+      "description": "ANC/ENC/RNC开关状态",
+      "protoID": 151,
+      "category": "control"
     },
-    "ALPHA": {
-      "description": "Alpha参数组",
-      "protoID": 5
+    "VEHICLE_STATE": {
+      "description": "车辆状态信息",
+      "protoID": 138,
+      "category": "vehicle"
     },
-    "SET1": {
-      "description": "Set1参数组",
-      "protoID": 6
+    "TRAN_FUNC_FLAG": {
+      "description": "传函功能标志",
+      "protoID": 153,
+      "category": "calibration"
     },
-    "CALIBRATION_OTHER": {
-      "description": "其他校准参数",
-      "protoID": 7
+    "TRAN_FUNC_STATE": {
+      "description": "传函标定状态",
+      "protoID": 154,
+      "category": "calibration"
+    },
+    "FILTER_RANGES": {
+      "description": "滤波器范围配置",
+      "protoID": 155,
+      "category": "calibration"
+    },
+    "SYSTEM_RANGES": {
+      "description": "系统阈值配置",
+      "protoID": 157,
+      "category": "system"
+    },
+    "ORDER_FLAG": {
+      "description": "阶次标志开关",
+      "protoID": 77,
+      "category": "enc"
+    },
+    "ORDER2_PARAMS": {
+      "description": "2阶参数集",
+      "protoID": 78,
+      "category": "enc"
+    },
+    "ORDER4_PARAMS": {
+      "description": "4阶参数集",
+      "protoID": 86,
+      "category": "enc"
+    },
+    "ORDER6_PARAMS": {
+      "description": "6阶参数集",
+      "protoID": 87,
+      "category": "enc"
+    },
+    "ALPHA_PARAMS": {
+      "description": "RNC步长参数",
+      "protoID": 158,
+      "category": "rnc"
+    },
+    "FREQ_DIVISION": {
+      "description": "RNC分频参数",
+      "protoID": 27,
+      "category": "rnc"
+    },
+    "THRESHOLDS": {
+      "description": "RNC阈值参数",
+      "protoID": 33,
+      "category": "rnc"
+    },
+    "GRAPH_DATA": {
+      "description": "图形数据（预留）",
+      "protoID": 156,
+      "category": "data"
     }
+  },
+
+  "categories": {
+    "realtime": "实时数据流",
+    "control": "控制功能",
+    "vehicle": "车辆信息",
+    "calibration": "传函标定",
+    "system": "系统配置",
+    "enc": "ENC标定",
+    "rnc": "RNC标定",
+    "data": "数据传输"
   }
 }

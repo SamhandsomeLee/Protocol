@@ -2,6 +2,8 @@
 #include "../handlers/anc_message_handler.h"
 #include "../handlers/enc_message_handler.h"
 #include "../handlers/alpha_message_handler.h"
+#include "../handlers/vehicle_message_handler.h"
+#include "../handlers/channel_message_handler.h"
 #include <QDebug>
 
 namespace Protocol {
@@ -52,22 +54,40 @@ void MessageFactory::clear() {
 }
 
 void MessageFactory::initializeDefaultHandlers() {
-    // 注册ANC处理器
+    // 注册ANC开关处理器（ANC/ENC/RNC组合开关）
     auto ancHandler = std::make_shared<AncMessageHandler>();
-    registerHandler(MessageType::ANC_OFF, ancHandler);
+    registerHandler(MessageType::ANC_SWITCH, ancHandler);
 
-    // 注册ENC处理器
-    auto encHandler = std::make_shared<EncMessageHandler>();
-    registerHandler(MessageType::ENC_OFF, encHandler);
-
-    // 注册Alpha处理器
+    // 注册Alpha参数处理器（RNC步长参数）
     auto alphaHandler = std::make_shared<AlphaMessageHandler>();
-    registerHandler(MessageType::ALPHA, alphaHandler);
+    registerHandler(MessageType::ALPHA_PARAMS, alphaHandler);
 
-    // TODO: 添加其他消息处理器
-    // RNC, SET1, CALIBRATION等处理器可以后续添加
+    // 注册车辆状态处理器
+    auto vehicleHandler = std::make_shared<VehicleMessageHandler>();
+    registerHandler(MessageType::VEHICLE_STATE, vehicleHandler);
 
-    qInfo() << "Default message handlers initialized:" << handlers_.size() << "handlers";
+    // 注册通道处理器（实时数据流相关）
+    auto channelNumberHandler = std::make_shared<ChannelMessageHandler>(ChannelMessageHandler::ChannelMessageSubType::CHANNEL_NUMBER);
+    registerHandler(MessageType::CHANNEL_NUMBER, channelNumberHandler);
+
+    auto channelAmplitudeHandler = std::make_shared<ChannelMessageHandler>(ChannelMessageHandler::ChannelMessageSubType::CHANNEL_AMPLITUDE);
+    registerHandler(MessageType::CHANNEL_AMPLITUDE, channelAmplitudeHandler);
+
+    auto channelSwitchHandler = std::make_shared<ChannelMessageHandler>(ChannelMessageHandler::ChannelMessageSubType::CHANNEL_SWITCH);
+    registerHandler(MessageType::CHANNEL_SWITCH, channelSwitchHandler);
+
+    // TODO: 可以根据需要添加更多处理器
+    // - TRAN_FUNC_FLAG, TRAN_FUNC_STATE (传函标定)
+    // - FILTER_RANGES, SYSTEM_RANGES (系统配置)
+    // - ORDER_FLAG, ORDER2_PARAMS, ORDER4_PARAMS, ORDER6_PARAMS (ENC标定)
+    // - FREQ_DIVISION, THRESHOLDS (RNC其他参数)
+    // - CHECK_MOD, GRAPH_DATA (数据流控制)
+
+    qInfo() << "ERNC Protocol message handlers initialized:" << handlers_.size() << "handlers";
+    qInfo() << "Supported message types:";
+    for (const auto& type : getSupportedTypes()) {
+        qInfo() << "  -" << static_cast<int>(type) << ":" << getTypeDescription(type);
+    }
 }
 
 } // namespace Protocol

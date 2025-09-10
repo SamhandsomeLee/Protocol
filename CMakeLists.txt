@@ -1,8 +1,9 @@
-# Protocol 动态库 CMake 配置
+# ERNC Protocol v3.0 动态库 CMake 配置
+# 支持18种消息类型、ProtoID 0-158映射、层次化参数结构
 cmake_minimum_required(VERSION 3.21)
 
-# 设置动态库项目
-project(ProtocolLib VERSION 1.0.0 LANGUAGES CXX C)
+# 设置ERNC协议动态库项目
+project(ProtocolLib VERSION 3.0.0 LANGUAGES CXX C)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
@@ -49,10 +50,11 @@ set(NANOPB_SOURCES
     nanopb/pb_encode.c
 )
 
-# protobuf 消息文件
+# ERNC Protocol v3.0 protobuf 消息文件
 set(PROTOBUF_SOURCES
-    messages/ernc.pb.c
-    messages/basic.pb.c
+    messages/ERNC_praram.pb.c  # 主要的ERNC参数协议文件
+    messages/ernc.pb.c         # 传统ERNC协议支持
+    messages/basic.pb.c        # 基础消息支持
 )
 
 # 传输层文件
@@ -82,14 +84,31 @@ set(SERIALIZATION_SOURCES
     serialization/message_factory.cpp
 )
 
-# 处理器文件
+# ERNC v3.0 消息处理器文件 (支持18种消息类型)
 set(HANDLER_SOURCES
+    # 核心ANC/ENC/RNC控制处理器
     handlers/alpha_message_handler.h
     handlers/alpha_message_handler.cpp
     handlers/anc_message_handler.h
     handlers/anc_message_handler.cpp
     handlers/enc_message_handler.h
     handlers/enc_message_handler.cpp
+    
+    # 新增的车辆状态处理器
+    handlers/vehicle_message_handler.h
+    handlers/vehicle_message_handler.cpp
+    
+    # 新增的通道配置处理器
+    handlers/channel_message_handler.h
+    handlers/channel_message_handler.cpp
+    
+    # 新增的RNC参数处理器
+    handlers/rnc_message_handler.h
+    handlers/rnc_message_handler.cpp
+    
+    # 新增的实时数据处理器
+    handlers/realtime_data_handler.h
+    handlers/realtime_data_handler.cpp
 )
 
 # 连接管理文件
@@ -317,10 +336,11 @@ install(FILES
     COMPONENT Development
 )
 
-# 安装 protobuf 头文件
+# 安装 ERNC v3.0 protobuf 头文件
 install(FILES
-    messages/ernc.pb.h
-    messages/basic.pb.h
+    messages/ERNC_praram.pb.h  # 主要的ERNC参数协议头文件
+    messages/ernc.pb.h         # 传统ERNC协议头文件
+    messages/basic.pb.h        # 基础消息头文件
     DESTINATION include/protocol/messages
     COMPONENT Development
 )
@@ -376,18 +396,23 @@ endif()
 # 打包配置
 # ================================
 
-# CPack 配置
-set(CPACK_PACKAGE_NAME "ProtocolLib")
+# ERNC v3.0 CPack 配置
+set(CPACK_PACKAGE_NAME "ERNCProtocolLib")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "ERNC Protocol Library")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "ERNC Protocol Library v3.0 - 18 Message Types Support")
 set(CPACK_PACKAGE_VENDOR "ERNC Project")
+set(CPACK_PACKAGE_DESCRIPTION "Complete ERNC protocol implementation supporting 18 message types, ProtoID 0-158 mapping, hierarchical parameters, and vehicle state integration.")
 
 if(WIN32)
     set(CPACK_GENERATOR "NSIS;ZIP")
-    set(CPACK_NSIS_DISPLAY_NAME "ERNC Protocol Library")
-    set(CPACK_NSIS_PACKAGE_NAME "ProtocolLib")
+    set(CPACK_NSIS_DISPLAY_NAME "ERNC Protocol Library v3.0")
+    set(CPACK_NSIS_PACKAGE_NAME "ERNCProtocolLib")
+    set(CPACK_NSIS_HELP_LINK "https://github.com/ERNC/protocol")
+    set(CPACK_NSIS_CONTACT "support@ernc.com")
 else()
-    set(CPACK_GENERATOR "TGZ;DEB")
+    set(CPACK_GENERATOR "TGZ;DEB;RPM")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "ERNC Project <support@ernc.com>")
+    set(CPACK_RPM_PACKAGE_VENDOR "ERNC Project")
 endif()
 
 include(CPack)
@@ -406,12 +431,15 @@ if(CLANG_FORMAT)
     )
 endif()
 
-# 输出配置信息
-message(STATUS "Protocol Library Configuration:")
+# 输出ERNC v3.0配置信息
+message(STATUS "ERNC Protocol Library v3.0 Configuration:")
 message(STATUS "  Version: ${PROJECT_VERSION}")
 message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  Protocol support: 18 message types, ProtoID 0-158")
+message(STATUS "  New features: Vehicle state, Channel config, Hierarchical params")
 message(STATUS "  Shared library: ON")
 message(STATUS "  Static library: ${BUILD_STATIC_LIB}")
 message(STATUS "  Examples: ${BUILD_EXAMPLES}")
 message(STATUS "  Tests: ${BUILD_TESTS}")
 message(STATUS "  Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "  Supported message types: ANC/ENC/RNC, Vehicle, Channel, Alpha, Realtime")

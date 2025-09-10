@@ -79,35 +79,72 @@ ApplicationWindow {
                 Layout.fillWidth: true
 
                 ColumnLayout {
-                    Switch {
-                        id: ancSwitch
-                        text: "ANC 主动降噪"
-                        onToggled: {
-                            protocolAdapter.sendParameterUpdate("anc.enabled", checked)
+                    RowLayout {
+                        Switch {
+                            id: ancSwitch
+                            text: "ANC 主动降噪"
+                            onToggled: {
+                                // 使用新的ANC_SWITCH消息类型参数结构
+                                var ancParams = {
+                                    "anc_off": !checked,
+                                    "enc_off": !encSwitch.checked,
+                                    "rnc_off": !rncSwitch.checked
+                                }
+                                protocolAdapter.sendParameterUpdate("anc.enabled", ancParams)
+                            }
+                        }
+                        Text {
+                            text: "(ProtoID: 151)"
+                            color: "gray"
+                            font.pixelSize: 10
                         }
                     }
 
-                    Switch {
-                        id: encSwitch
-                        text: "ENC 发动机噪声消除"
-                        onToggled: {
-                            protocolAdapter.sendParameterUpdate("enc.enabled", checked)
+                    RowLayout {
+                        Switch {
+                            id: encSwitch
+                            text: "ENC 发动机噪声消除"
+                            onToggled: {
+                                var ancParams = {
+                                    "anc_off": !ancSwitch.checked,
+                                    "enc_off": !checked,
+                                    "rnc_off": !rncSwitch.checked
+                                }
+                                protocolAdapter.sendParameterUpdate("anc.enabled", ancParams)
+                            }
+                        }
+                        Text {
+                            text: "(ProtoID: 151)"
+                            color: "gray"
+                            font.pixelSize: 10
                         }
                     }
 
-                    Switch {
-                        id: rncSwitch
-                        text: "RNC 路噪消除"
-                        onToggled: {
-                            protocolAdapter.sendParameterUpdate("rnc.enabled", checked)
+                    RowLayout {
+                        Switch {
+                            id: rncSwitch
+                            text: "RNC 路噪消除"
+                            onToggled: {
+                                var ancParams = {
+                                    "anc_off": !ancSwitch.checked,
+                                    "enc_off": !encSwitch.checked,
+                                    "rnc_off": !checked
+                                }
+                                protocolAdapter.sendParameterUpdate("anc.enabled", ancParams)
+                            }
+                        }
+                        Text {
+                            text: "(ProtoID: 151)"
+                            color: "gray"
+                            font.pixelSize: 10
                         }
                     }
                 }
             }
 
-            // Alpha参数组
+            // 车辆状态监控组 (新增)
             GroupBox {
-                title: "Alpha 参数"
+                title: "车辆状态监控 (VEHICLE_STATE - ProtoID: 138)"
                 Layout.fillWidth: true
 
                 GridLayout {
@@ -115,61 +152,101 @@ ApplicationWindow {
                     columnSpacing: 20
                     rowSpacing: 10
 
-                    Label { text: "Alpha1:" }
+                    Label { text: "车速 (km/h):" }
+                    SpinBox {
+                        id: vehicleSpeedSpinBox
+                        from: 0
+                        to: 250
+                        value: 60
+                        onValueChanged: {
+                            var vehicleParams = {
+                                "speed": value,
+                                "engine_speed": engineSpeedSpinBox.value
+                            }
+                            protocolAdapter.sendParameterUpdate("vehicle.speed", vehicleParams)
+                        }
+                    }
+
+                    Label { text: "发动机转速 (rpm):" }
+                    SpinBox {
+                        id: engineSpeedSpinBox
+                        from: 0
+                        to: 5000
+                        value: 1500
+                        onValueChanged: {
+                            var vehicleParams = {
+                                "speed": vehicleSpeedSpinBox.value,
+                                "engine_speed": value
+                            }
+                            protocolAdapter.sendParameterUpdate("vehicle.speed", vehicleParams)
+                        }
+                    }
+                }
+            }
+
+            // RNC Alpha参数组 (更新)
+            GroupBox {
+                title: "RNC Alpha 参数 (ALPHA_PARAMS - ProtoID: 158)"
+                Layout.fillWidth: true
+
+                GridLayout {
+                    columns: 2
+                    columnSpacing: 20
+                    rowSpacing: 10
+
+                    Label { text: "RNC Alpha1:" }
                     SpinBox {
                         id: alpha1SpinBox
                         from: 0
-                        to: 4294967295
+                        to: 500
+                        value: 100
                         onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.alpha.alpha1", value)
+                            var rncParams = {
+                                "alpha1": value,
+                                "alpha2": alpha2SpinBox.value,
+                                "alpha3": alpha3SpinBox.value
+                            }
+                            protocolAdapter.sendParameterUpdate("rnc.alpha1", rncParams)
                         }
                     }
 
-                    Label { text: "Alpha2:" }
+                    Label { text: "RNC Alpha2:" }
                     SpinBox {
                         id: alpha2SpinBox
                         from: 0
-                        to: 4294967295
+                        to: 500
+                        value: 150
                         onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.alpha.alpha2", value)
+                            var rncParams = {
+                                "alpha1": alpha1SpinBox.value,
+                                "alpha2": value,
+                                "alpha3": alpha3SpinBox.value
+                            }
+                            protocolAdapter.sendParameterUpdate("rnc.alpha1", rncParams)
                         }
                     }
 
-                    Label { text: "Alpha3:" }
+                    Label { text: "RNC Alpha3:" }
                     SpinBox {
                         id: alpha3SpinBox
                         from: 0
-                        to: 4294967295
+                        to: 500
+                        value: 200
                         onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.alpha.alpha3", value)
-                        }
-                    }
-
-                    Label { text: "Alpha4:" }
-                    SpinBox {
-                        id: alpha4SpinBox
-                        from: 0
-                        to: 4294967295
-                        onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.alpha.alpha4", value)
-                        }
-                    }
-
-                    Label { text: "Alpha5:" }
-                    SpinBox {
-                        id: alpha5SpinBox
-                        from: 0
-                        to: 4294967295
-                        onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.alpha.alpha5", value)
+                            var rncParams = {
+                                "alpha1": alpha1SpinBox.value,
+                                "alpha2": alpha2SpinBox.value,
+                                "alpha3": value
+                            }
+                            protocolAdapter.sendParameterUpdate("rnc.alpha1", rncParams)
                         }
                     }
                 }
             }
 
-            // Set1参数组
+            // 通道配置组 (新增)
             GroupBox {
-                title: "Set1 参数"
+                title: "通道配置 (CHANNEL_NUMBER - ProtoID: 0)"
                 Layout.fillWidth: true
 
                 GridLayout {
@@ -177,68 +254,93 @@ ApplicationWindow {
                     columnSpacing: 20
                     rowSpacing: 10
 
-                    Label { text: "Gamma:" }
+                    Label { text: "参考通道数:" }
                     SpinBox {
-                        id: gammaSpinBox
-                        from: 0
-                        to: 4294967295
-                        onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.set1.gamma", value)
-                        }
-                    }
-
-                    Label { text: "Eta:" }
-                    SpinBox {
-                        id: etaSpinBox
-                        from: 0
-                        to: 4294967295
-                        onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.set1.eta", value)
-                        }
-                    }
-
-                    Label { text: "Delta:" }
-                    SpinBox {
-                        id: deltaSpinBox
-                        from: 0
-                        to: 4294967295
-                        onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.set1.delta", value)
-                        }
-                    }
-
-                    Label { text: "扬声器数量:" }
-                    SpinBox {
-                        id: spkNumSpinBox
-                        from: 0
+                        id: referChannelSpinBox
+                        from: 1
                         to: 16
+                        value: 4
                         onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.set1.spk_num", value)
+                            var channelParams = {
+                                "refer_num": value,
+                                "error_num": errorChannelSpinBox.value
+                            }
+                            protocolAdapter.sendParameterUpdate("channel.refer_num", channelParams)
                         }
                     }
 
-                    Label { text: "输出幅度:" }
+                    Label { text: "误差通道数:" }
                     SpinBox {
-                        id: outputAmpSpinBox
-                        from: 0
-                        to: 4294967295
+                        id: errorChannelSpinBox
+                        from: 1
+                        to: 32
+                        value: 8
                         onValueChanged: {
-                            protocolAdapter.sendParameterUpdate("tuning.set1.output_amplitude", value)
+                            var channelParams = {
+                                "refer_num": referChannelSpinBox.value,
+                                "error_num": value
+                            }
+                            protocolAdapter.sendParameterUpdate("channel.refer_num", channelParams)
                         }
                     }
                 }
             }
 
-            // 系统控制
+            // ENC 2阶参数组 (新增)
             GroupBox {
-                title: "系统控制"
+                title: "ENC 2阶参数 (ORDER2_PARAMS - ProtoID: 78)"
+                Layout.fillWidth: true
+
+                GridLayout {
+                    columns: 2
+                    columnSpacing: 20
+                    rowSpacing: 10
+
+                    Label { text: "2阶参数1:" }
+                    SpinBox {
+                        id: order2Param1SpinBox
+                        from: 0
+                        to: 1000
+                        value: 50
+                        onValueChanged: {
+                            var order2Params = {
+                                "param1": value,
+                                "param2": order2Param2SpinBox.value
+                            }
+                            protocolAdapter.sendParameterUpdate("order2.params", order2Params)
+                        }
+                    }
+
+                    Label { text: "2阶参数2:" }
+                    SpinBox {
+                        id: order2Param2SpinBox
+                        from: 0
+                        to: 1000
+                        value: 75
+                        onValueChanged: {
+                            var order2Params = {
+                                "param1": order2Param1SpinBox.value,
+                                "param2": value
+                            }
+                            protocolAdapter.sendParameterUpdate("order2.params", order2Params)
+                        }
+                    }
+                }
+            }
+
+            // 系统控制 (更新)
+            GroupBox {
+                title: "系统控制 (CHECK_MOD - ProtoID: 150)"
                 Layout.fillWidth: true
 
                 Switch {
                     id: checkModeSwitch
-                    text: "检测模式"
+                    text: "实时数据流检测模式"
                     onToggled: {
-                        protocolAdapter.sendParameterUpdate("system.check_mode", checked)
+                        var checkParams = {
+                            "check_enabled": checked
+                        }
+                        protocolAdapter.sendParameterUpdate("system.check_mode", checkParams)
                     }
                 }
             }
@@ -255,55 +357,50 @@ ApplicationWindow {
         height: 50
 
         Button {
-            text: "批量发送Alpha参数"
+            text: "批量发送RNC Alpha参数"
             Layout.fillWidth: true
             onClicked: {
-                var paths = [
-                    "tuning.alpha.alpha1",
-                    "tuning.alpha.alpha2",
-                    "tuning.alpha.alpha3",
-                    "tuning.alpha.alpha4",
-                    "tuning.alpha.alpha5"
-                ]
+                var paths = ["rnc.alpha1"]
+                var rncParams = {
+                    "alpha1": alpha1SpinBox.value,
+                    "alpha2": alpha2SpinBox.value,
+                    "alpha3": alpha3SpinBox.value
+                }
                 var values = {
-                    "tuning.alpha.alpha1": alpha1SpinBox.value,
-                    "tuning.alpha.alpha2": alpha2SpinBox.value,
-                    "tuning.alpha.alpha3": alpha3SpinBox.value,
-                    "tuning.alpha.alpha4": alpha4SpinBox.value,
-                    "tuning.alpha.alpha5": alpha5SpinBox.value
+                    "rnc.alpha1": rncParams
                 }
                 protocolAdapter.sendParameterGroup(paths, values)
             }
         }
 
         Button {
-            text: "批量发送Set1参数"
+            text: "批量发送车辆+通道参数"
             Layout.fillWidth: true
             onClicked: {
-                var paths = [
-                    "tuning.set1.gamma",
-                    "tuning.set1.eta",
-                    "tuning.set1.delta",
-                    "tuning.set1.spk_num",
-                    "tuning.set1.output_amplitude"
-                ]
+                var paths = ["vehicle.speed", "channel.refer_num"]
+                var vehicleParams = {
+                    "speed": vehicleSpeedSpinBox.value,
+                    "engine_speed": engineSpeedSpinBox.value
+                }
+                var channelParams = {
+                    "refer_num": referChannelSpinBox.value,
+                    "error_num": errorChannelSpinBox.value
+                }
                 var values = {
-                    "tuning.set1.gamma": gammaSpinBox.value,
-                    "tuning.set1.eta": etaSpinBox.value,
-                    "tuning.set1.delta": deltaSpinBox.value,
-                    "tuning.set1.spk_num": spkNumSpinBox.value,
-                    "tuning.set1.output_amplitude": outputAmpSpinBox.value
+                    "vehicle.speed": vehicleParams,
+                    "channel.refer_num": channelParams
                 }
                 protocolAdapter.sendParameterGroup(paths, values)
             }
         }
 
         Button {
-            text: "获取支持的参数"
+            text: "获取新支持的参数"
             Layout.fillWidth: true
             onClicked: {
                 var params = protocolAdapter.getSupportedParameters()
-                console.log("支持的参数:", params.join(", "))
+                console.log("ERNC协议支持的参数:", params.join(", "))
+                console.log("新增的消息类型:", "ANC_SWITCH(151), VEHICLE_STATE(138), CHANNEL_NUMBER(0), ALPHA_PARAMS(158), ORDER2_PARAMS(78)")
             }
         }
     }
@@ -325,7 +422,8 @@ ApplicationWindow {
         }
 
         function onProtocolVersionMismatch(expected, actual) {
-            console.log("协议版本不匹配 - 期望:", expected, "实际:", actual)
+            console.log("ERNC协议版本不匹配 - 期望:", expected, "实际:", actual)
+            console.log("当前支持18种消息类型，ProtoID范围: 0-158")
         }
 
         function onDataReceived(data) {

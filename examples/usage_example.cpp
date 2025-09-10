@@ -7,7 +7,7 @@
 
 #include <QCoreApplication>
 #include <QDebug>
-#include "../adapter/protocol_adapter_refactored.h"
+#include "../adapter/protocol_adapter.h"
 #include "../transport/itransport.h" // 假设存在具体的传输实现
 
 using namespace Protocol;
@@ -74,14 +74,14 @@ private:
         transport_ = new MockTransport();
 
         // 创建协议适配器
-        adapter_ = new ProtocolAdapterRefactored(transport_, this);
+        adapter_ = new ProtocolAdapter(transport_, this);
 
         // 连接信号
-        connect(adapter_, &ProtocolAdapterRefactored::parameterAcknowledged,
+        connect(adapter_, &ProtocolAdapter::parameterAcknowledged,
                 this, &ProtocolExample::onParameterAcknowledged);
-        connect(adapter_, &ProtocolAdapterRefactored::communicationError,
+        connect(adapter_, &ProtocolAdapter::communicationError,
                 this, &ProtocolExample::onCommunicationError);
-        connect(adapter_, &ProtocolAdapterRefactored::connectionStatusChanged,
+        connect(adapter_, &ProtocolAdapter::connectionStatusChanged,
                 this, &ProtocolExample::onConnectionStatusChanged);
 
         // 打开连接
@@ -94,14 +94,25 @@ private:
     void demonstrateBasicUsage() {
         qInfo() << "\n=== Basic Usage Examples ===";
 
-        // 1. 发送单个参数
-        qInfo() << "1. Sending single parameter update...";
-        bool success = adapter_->sendParameterUpdate("anc.enabled", true);
+        // 1. 发送ANC开关参数
+        qInfo() << "1. Sending ANC switch parameter update...";
+        QVariantMap ancParams;
+        ancParams["anc_off"] = false;  // 开启ANC
+        ancParams["enc_off"] = true;   // 关闭ENC
+        ancParams["rnc_off"] = false;  // 开启RNC
+        bool success = adapter_->sendParameterUpdate("anc.enabled", ancParams);
         qInfo() << "   Result:" << (success ? "Success" : "Failed");
 
-        // 2. 检查参数支持
-        qInfo() << "2. Checking parameter support...";
-        QStringList testParams = {"anc.enabled", "enc.enabled", "unknown.param"};
+        // 2. 检查新参数支持
+        qInfo() << "2. Checking new parameter support...";
+        QStringList testParams = {
+            "anc.enabled",        // ANC/ENC/RNC开关
+            "vehicle.speed",      // 车辆状态
+            "channel.refer_num",  // 通道数量
+            "rnc.alpha1",         // RNC参数
+            "order2.params",      // ENC 2阶参数
+            "unknown.param"       // 未知参数
+        };
         for (const QString& param : testParams) {
             bool supported = adapter_->isParameterSupported(param);
             qInfo() << "   " << param << ":" << (supported ? "Supported" : "Not supported");
@@ -114,13 +125,23 @@ private:
             qInfo() << "   -" << param;
         }
 
-        // 4. 发送参数组
-        qInfo() << "4. Sending parameter group...";
-        QStringList paths = {"anc.enabled", "enc.enabled"};
-        QVariantMap values = {
-            {"anc.enabled", false},
-            {"enc.enabled", true}
-        };
+        // 4. 发送新的参数组（车辆状态 + RNC参数）
+        qInfo() << "4. Sending new parameter group...";
+        QStringList paths = {"vehicle.speed", "rnc.alpha1"};
+        QVariantMap values;
+        
+        // 车辆状态参数
+        QVariantMap vehicleParams;
+        vehicleParams["speed"] = 75;
+        vehicleParams["engine_speed"] = 1900;
+        values["vehicle.speed"] = vehicleParams;
+        
+        // RNC参数
+        QVariantMap rncParams;
+        rncParams["alpha1"] = 110;
+        rncParams["alpha2"] = 160;
+        values["rnc.alpha1"] = rncParams;
+        
         success = adapter_->sendParameterGroup(paths, values);
         qInfo() << "   Result:" << (success ? "Success" : "Failed");
     }
@@ -135,35 +156,46 @@ private:
         auto connectionManager = adapter_->connectionManager();
         auto versionManager = adapter_->versionManager();
 
-        // 获取详细的参数信息
-        if (parameterMapper) {
-            auto paramInfo = parameterMapper->getParameterInfo("anc.enabled");
-            if (paramInfo.isValid()) {
-                qInfo() << "   ANC parameter info:";
-                qInfo() << "     Logical path:" << paramInfo.logicalPath;
-                qInfo() << "     Protobuf path:" << paramInfo.protobufPath;
-                qInfo() << "     Field type:" << paramInfo.fieldType;
-                qInfo() << "     Default value:" << paramInfo.defaultValue;
-            }
-        }
+        // 获取协议适配器状态信息
+        qInfo() << "   Protocol adapter status:";
+        qInfo() << "     Is connected:" << adapter_->isConnected();
+        qInfo() << "     Protocol version:" << adapter_->getProtocolVersion();
+        qInfo() << "     Transport description:" << adapter_->transportDescription();
+        
+        // 展示新支持的参数类型
+        qInfo() << "   New supported parameter types:";
+        qInfo() << "     - ANC/ENC/RNC switches (anc.enabled)";
+        qInfo() << "     - Vehicle state (vehicle.speed)";
+        qInfo() << "     - Channel configuration (channel.refer_num)";
+        qInfo() << "     - RNC parameters (rnc.alpha1)";
+        qInfo() << "     - ENC parameters (order2.params)";
 
-        // 获取连接统计信息
-        if (connectionManager) {
-            auto stats = connectionManager->getConnectionStats();
-            qInfo() << "   Connection statistics:";
-            qInfo() << "     Bytes sent:" << stats.bytesSent;
-            qInfo() << "     Bytes received:" << stats.bytesReceived;
-            qInfo() << "     Send errors:" << stats.sendErrorCount;
-        }
+        // 获取适配器统计信息
+        qInfo() << "   Adapter statistics:";
+        qInfo() << "     Connection status:" << (adapter_->isConnected() ? "Connected" : "Disconnected");
+        qInfo() << "     Supported parameters:" << adapter_->getSupportedParameters().size();
+        qInfo() << "     Transport type:" << (transport_ ? transport_->transportType() : "None");
+        
+        // 展示消息类型统计
+        qInfo() << "   Message type coverage:";
+        qInfo() << "     Total message types: 18";
+        qInfo() << "     ProtoID range: 0-158";
+        qInfo() << "     Categories: Real-time, Vehicle, Transfer Function, System, ENC, RNC";
 
-        // 获取版本信息
-        if (versionManager) {
-            qInfo() << "   Version info:" << versionManager->getVersionSummary();
-        }
+        // 获取ERNC协议版本信息
+        qInfo() << "   ERNC Protocol version info:";
+        qInfo() << "     Protocol version:" << adapter_->getProtocolVersion();
+        qInfo() << "     Proto file: ERNC_praram.proto";
+        qInfo() << "     Supported features: 18 message types, hierarchical parameters";
 
-        // 2. 直接序列化/反序列化
-        qInfo() << "2. Direct serialization example...";
-        QVariantMap params = {{"processing.alpha", 0.8f}};
+        // 2. 直接序列化/反序列化（使用新参数结构）
+        qInfo() << "2. Direct serialization example with new structure...";
+        QVariantMap params;
+        QVariantMap rncParams;
+        rncParams["alpha1"] = 95;
+        rncParams["alpha2"] = 145;
+        params["rnc.alpha1"] = rncParams;
+        
         QByteArray serializedData = adapter_->serializeParameters(params);
 
         if (!serializedData.isEmpty()) {
@@ -195,7 +227,7 @@ private:
 
 private:
     MockTransport* transport_ = nullptr;
-    ProtocolAdapterRefactored* adapter_ = nullptr;
+    ProtocolAdapter* adapter_ = nullptr;
 };
 
 int main(int argc, char *argv[])

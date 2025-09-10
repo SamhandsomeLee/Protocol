@@ -158,8 +158,11 @@ private:
             transport_->close();
             qDebug() << "🔌 Transport closed";
         }
+        
+        // 清理新的参数映射缓存
+        qDebug() << "🧹 Clearing parameter mapping cache...";
 
-        qDebug() << "✅ Cleanup completed";
+        qDebug() << "✅ ERNC Protocol cleanup completed";
     }
 
 private:

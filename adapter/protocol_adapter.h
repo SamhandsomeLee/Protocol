@@ -11,12 +11,13 @@
 #include <QTimer>
 #include <QScopedPointer>
 #include "protocol/transport/itransport.h"
+#include "protocol/core/message_types.h"
 
 extern "C" {
 #include "protocol/nanopb/pb.h"
 #include "protocol/nanopb/pb_encode.h"
 #include "protocol/nanopb/pb_decode.h"
-#include "protocol/messages/ernc.pb.h"
+#include "protocol/messages/ERNC_praram.pb.h"
 #include "protocol/messages/basic.pb.h"
 }
 
@@ -99,23 +100,10 @@ public:
     QString getProtobufPath(const QString& parameterPath) const;
 
     /**
-     * @brief 消息类型枚举
+     * @brief 使用Protocol命名空间的MessageType
      */
-    enum class MessageType {
-        ANC_OFF,
-        ENC_OFF,
-        RNC_OFF,
-        CHECK_MODE,
-        CALIBRATION_AMP,
-        CALIBRATION_OTHER,
-        ALPHA,
-        SET1,
-        ANC_CONTROL,
-        RNC_REFRESH,
-        SPEAKER_CHECK,
-        TRAN_FUNC_FLAG,
-        BYPASS_MODE
-    };
+    using MessageType = Protocol::MessageType;
+    using FunctionCode = Protocol::FunctionCode;
 
 signals:
     // 参数确认信号
@@ -194,28 +182,68 @@ private:
     void disconnectTransportSignals();
 
     /**
-     * @brief 具体消息序列化方法
+     * @brief 具体消息序列化方法 - 基于ERNC_praram.proto
      */
-    QByteArray serializeAncOff(bool value);
-    QByteArray serializeEncOff(bool value);
-    QByteArray serializeRncOff(bool value);
-    QByteArray serializeCheckMode(bool value);
-    QByteArray serializeAlpha(const QVariantMap& parameters);
-    QByteArray serializeSet1(const QVariantMap& parameters);
-    QByteArray serializeCalibrationAmp(const QVariantMap& parameters);
-    QByteArray serializeCalibrationOther(const QVariantMap& parameters);
+    // 实时数据流相关
+    QByteArray serializeChannelNumber(const QVariantMap& parameters);
+    QByteArray serializeChannelAmplitude(const QVariantMap& parameters);
+    QByteArray serializeChannelSwitch(const QVariantMap& parameters);
+    QByteArray serializeCheckMod(uint32_t checkMod);
+
+    // 车辆CAN信息相关
+    QByteArray serializeAncSwitch(const QVariantMap& parameters);
+    QByteArray serializeVehicleState(const QVariantMap& parameters);
+
+    // 传函标定相关
+    QByteArray serializeTranFuncFlag(bool value);
+    QByteArray serializeTranFuncState(uint32_t state);
+    QByteArray serializeFilterRanges(const QVariantMap& parameters);
+
+    // 系统配置相关
+    QByteArray serializeSystemRanges(const QVariantMap& parameters);
+
+    // ENC标定相关
+    QByteArray serializeOrderFlag(const QVariantMap& parameters);
+    QByteArray serializeOrder2Params(const QVariantMap& parameters);
+    QByteArray serializeOrder4Params(const QVariantMap& parameters);
+    QByteArray serializeOrder6Params(const QVariantMap& parameters);
+
+    // RNC标定相关
+    QByteArray serializeAlphaParams(const QVariantMap& parameters);
+    QByteArray serializeFreqDivision(const QVariantMap& parameters);
+    QByteArray serializeThresholds(const QVariantMap& parameters);
 
     /**
-     * @brief 具体消息反序列化方法
+     * @brief 具体消息反序列化方法 - 基于ERNC_praram.proto
      */
-    bool deserializeAncOff(const QByteArray& data, QVariantMap& parameters);
-    bool deserializeEncOff(const QByteArray& data, QVariantMap& parameters);
-    bool deserializeRncOff(const QByteArray& data, QVariantMap& parameters);
-    bool deserializeCheckMode(const QByteArray& data, QVariantMap& parameters);
-    bool deserializeAlpha(const QByteArray& data, QVariantMap& parameters);
-    bool deserializeSet1(const QByteArray& data, QVariantMap& parameters);
-    bool deserializeCalibrationAmp(const QByteArray& data, QVariantMap& parameters);
-    bool deserializeCalibrationOther(const QByteArray& data, QVariantMap& parameters);
+    // 实时数据流相关
+    bool deserializeChannelNumber(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeChannelAmplitude(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeChannelSwitch(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeCheckMod(const QByteArray& data, QVariantMap& parameters);
+
+    // 车辆CAN信息相关
+    bool deserializeAncSwitch(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeVehicleState(const QByteArray& data, QVariantMap& parameters);
+
+    // 传函标定相关
+    bool deserializeTranFuncFlag(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeTranFuncState(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeFilterRanges(const QByteArray& data, QVariantMap& parameters);
+
+    // 系统配置相关
+    bool deserializeSystemRanges(const QByteArray& data, QVariantMap& parameters);
+
+    // ENC标定相关
+    bool deserializeOrderFlag(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeOrder2Params(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeOrder4Params(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeOrder6Params(const QByteArray& data, QVariantMap& parameters);
+
+    // RNC标定相关
+    bool deserializeAlphaParams(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeFreqDivision(const QByteArray& data, QVariantMap& parameters);
+    bool deserializeThresholds(const QByteArray& data, QVariantMap& parameters);
 
     /**
      * @brief 成员变量

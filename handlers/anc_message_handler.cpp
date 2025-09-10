@@ -4,28 +4,51 @@
 namespace Protocol {
 
 QByteArray AncMessageHandler::serialize(const QVariantMap& parameters) {
+    qDebug() << "=== AncMessageHandler::serialize START ===";
+    qDebug() << "Input parameters:" << parameters;
+    qDebug() << "Parameters keys:" << parameters.keys();
+    qDebug() << "Parameters size:" << parameters.size();
+
     if (!validateParameters(parameters)) {
         qWarning() << "Invalid parameters for ANC message";
+        qDebug() << "=== AncMessageHandler::serialize END (validation failed) ===";
         return QByteArray();
     }
+    qDebug() << "Parameter validation passed";
 
     MSG_AncOff msg = MSG_AncOff_init_zero;
+    qDebug() << "MSG_AncOff initialized";
 
     // 设置ANC开关状态 (注意：ANC_OFF消息中true表示关闭ANC)
-    bool ancEnabled = parameters.value("anc.enabled", false).toBool();
+    QVariant ancEnabledVariant = parameters.value("anc.enabled", false);
+    qDebug() << "Raw anc.enabled value:" << ancEnabledVariant;
+    qDebug() << "anc.enabled variant type:" << ancEnabledVariant.typeName();
+
+    bool ancEnabled = ancEnabledVariant.toBool();
+    qDebug() << "Converted anc.enabled to bool:" << ancEnabled;
+
     msg.value = !ancEnabled; // 反转逻辑，因为这是ANC_OFF消息
+    qDebug() << "MSG_AncOff.value set to:" << msg.value << "(inverted from ancEnabled:" << ancEnabled << ")";
 
     // 序列化消息
     uint8_t buffer[MAX_BUFFER_SIZE];
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+    qDebug() << "Protobuf stream initialized, buffer size:" << MAX_BUFFER_SIZE;
 
+    qDebug() << "Starting protobuf encoding...";
     if (!pb_encode(&stream, MSG_AncOff_fields, &msg)) {
         qWarning() << "Failed to encode ANC message:" << PB_GET_ERROR(&stream);
+        qDebug() << "Stream bytes written before failure:" << stream.bytes_written;
+        qDebug() << "=== AncMessageHandler::serialize END (encoding failed) ===";
         return QByteArray();
     }
+    qDebug() << "Protobuf encoding successful, bytes written:" << stream.bytes_written;
 
     QByteArray result(reinterpret_cast<char*>(buffer), stream.bytes_written);
+    qDebug() << "Created QByteArray with size:" << result.size();
+    qDebug() << "Result data (hex):" << result.toHex();
     qDebug() << "ANC message serialized:" << result.size() << "bytes, ANC enabled:" << ancEnabled;
+    qDebug() << "=== AncMessageHandler::serialize END (success) ===";
 
     return result;
 }
