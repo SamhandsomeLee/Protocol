@@ -19,16 +19,43 @@ QByteArray AncMessageHandler::serialize(const QVariantMap& parameters) {
     MSG_AncSwitch msg = MSG_AncSwitch_init_zero;
     qDebug() << "MSG_AncSwitch initialized";
 
-    // 设置ANC开关状态 (注意：ANC_OFF消息中true表示关闭ANC)
-    QVariant ancEnabledVariant = parameters.value("anc.enabled", false);
-    qDebug() << "Raw anc.enabled value:" << ancEnabledVariant;
-    qDebug() << "anc.enabled variant type:" << ancEnabledVariant.typeName();
+    // 初始化消息，默认保持所有字段未设置状态
+    // 仅设置用户明确提供的参数对应的字段
 
-    bool ancEnabled = ancEnabledVariant.toBool();
-    qDebug() << "Converted anc.enabled to bool:" << ancEnabled;
+    // 设置ANC开关状态 (注意：消息中true表示关闭，false表示开启)
+    if (parameters.contains("anc.enabled")) {
+        QVariant ancEnabledVariant = parameters.value("anc.enabled");
+        qDebug() << "Raw anc.enabled value:" << ancEnabledVariant;
+        qDebug() << "anc.enabled variant type:" << ancEnabledVariant.typeName();
+        bool ancEnabled = ancEnabledVariant.toBool();
+        qDebug() << "Converted anc.enabled to bool:" << ancEnabled;
+        msg.anc_off = !ancEnabled; // 设置ANC_OFF字段（true=关闭，false=开启）
+        qDebug() << "MSG_AncSwitch.anc_off set to:" << msg.anc_off << "(inverted from ancEnabled:" << ancEnabled << ")";
+    } else {
+        qDebug() << "anc.enabled not provided, field not modified";
+    }
 
-    msg.anc_off = !ancEnabled; // 设置ANC_OFF字段（true=关闭，false=开启）
-    qDebug() << "MSG_AncSwitch.anc_off set to:" << msg.anc_off << "(inverted from ancEnabled:" << ancEnabled << ")";
+    // 设置ENC开关状态
+    if (parameters.contains("enc.enabled")) {
+        QVariant encEnabledVariant = parameters.value("enc.enabled");
+        qDebug() << "Raw enc.enabled value:" << encEnabledVariant;
+        bool encEnabled = encEnabledVariant.toBool();
+        msg.enc_off = !encEnabled; // 设置ENC_OFF字段（true=关闭，false=开启）
+        qDebug() << "MSG_AncSwitch.enc_off set to:" << msg.enc_off << "(inverted from encEnabled:" << encEnabled << ")";
+    } else {
+        qDebug() << "enc.enabled not provided, field not modified";
+    }
+
+    // 设置RNC开关状态
+    if (parameters.contains("rnc.enabled")) {
+        QVariant rncEnabledVariant = parameters.value("rnc.enabled");
+        qDebug() << "Raw rnc.enabled value:" << rncEnabledVariant;
+        bool rncEnabled = rncEnabledVariant.toBool();
+        msg.rnc_off = !rncEnabled; // 设置RNC_OFF字段（true=关闭，false=开启）
+        qDebug() << "MSG_AncSwitch.rnc_off set to:" << msg.rnc_off << "(inverted from rncEnabled:" << rncEnabled << ")";
+    } else {
+        qDebug() << "rnc.enabled not provided, field not modified";
+    }
 
     // 序列化消息
     uint8_t buffer[MAX_BUFFER_SIZE];
@@ -70,26 +97,58 @@ bool AncMessageHandler::deserialize(const QByteArray& data, QVariantMap& paramet
         return false;
     }
 
-    // 解析ANC状态 (注意：ANC_OFF消息中true表示关闭ANC)
+    // 解析ANC状态 (注意：消息中true表示关闭，false表示开启)
     bool ancEnabled = !msg.anc_off; // 反转逻辑，anc_off=true表示关闭
     parameters["anc.enabled"] = ancEnabled;
 
-    qDebug() << "ANC message deserialized: ANC enabled:" << ancEnabled;
+    // 解析ENC状态
+    bool encEnabled = !msg.enc_off; // 反转逻辑，enc_off=true表示关闭
+    parameters["enc.enabled"] = encEnabled;
+
+    // 解析RNC状态
+    bool rncEnabled = !msg.rnc_off; // 反转逻辑，rnc_off=true表示关闭
+    parameters["rnc.enabled"] = rncEnabled;
+
+    qDebug() << "ANC message deserialized: ANC enabled:" << ancEnabled
+             << ", ENC enabled:" << encEnabled
+             << ", RNC enabled:" << rncEnabled;
     return true;
 }
 
 bool AncMessageHandler::validateParameters(const QVariantMap& parameters) const {
-    // 检查必需的参数
-    if (!parameters.contains("anc.enabled")) {
-        qWarning() << "Missing required parameter: anc.enabled";
+    // 要求至少提供一个参数
+    if (!parameters.contains("anc.enabled") &&
+        !parameters.contains("enc.enabled") &&
+        !parameters.contains("rnc.enabled")) {
+        qWarning() << "At least one parameter must be provided (anc.enabled, enc.enabled, or rnc.enabled)";
         return false;
     }
 
-    // 检查参数类型
-    QVariant enabledValue = parameters.value("anc.enabled");
-    if (!enabledValue.canConvert<bool>()) {
-        qWarning() << "Invalid type for anc.enabled, expected bool, got:" << enabledValue.typeName();
-        return false;
+    // 检查ANC参数 (可选参数，仅在提供时检查类型)
+    if (parameters.contains("anc.enabled")) {
+        QVariant ancValue = parameters.value("anc.enabled");
+        if (!ancValue.canConvert<bool>()) {
+            qWarning() << "Invalid type for anc.enabled, expected bool, got:" << ancValue.typeName();
+            return false;
+        }
+    }
+
+    // 检查ENC参数 (可选参数，仅在提供时检查类型)
+    if (parameters.contains("enc.enabled")) {
+        QVariant encValue = parameters.value("enc.enabled");
+        if (!encValue.canConvert<bool>()) {
+            qWarning() << "Invalid type for enc.enabled, expected bool, got:" << encValue.typeName();
+            return false;
+        }
+    }
+
+    // 检查RNC参数 (可选参数，仅在提供时检查类型)
+    if (parameters.contains("rnc.enabled")) {
+        QVariant rncValue = parameters.value("rnc.enabled");
+        if (!rncValue.canConvert<bool>()) {
+            qWarning() << "Invalid type for rnc.enabled, expected bool, got:" << rncValue.typeName();
+            return false;
+        }
     }
 
     return true;
