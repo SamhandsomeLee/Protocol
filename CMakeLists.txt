@@ -82,6 +82,8 @@ set(SERIALIZATION_SOURCES
     serialization/message_serializer.cpp
     serialization/message_factory.h
     serialization/message_factory.cpp
+    serialization/protocol_packager.h
+    serialization/protocol_packager.cpp
 )
 
 # ERNC v3.0 消息处理器文件 (支持18种消息类型)

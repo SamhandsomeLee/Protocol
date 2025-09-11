@@ -74,7 +74,15 @@ QByteArray AncMessageHandler::serialize(const QVariantMap& parameters) {
     QByteArray result(reinterpret_cast<char*>(buffer), stream.bytes_written);
     qDebug() << "Created QByteArray with size:" << result.size();
     qDebug() << "Result data (hex):" << result.toHex();
-    qDebug() << "ANC message serialized:" << result.size() << "bytes, ANC enabled:" << ancEnabled;
+    qDebug() << "ANC message serialized:" << result.size() << "bytes, ANC state:"
+             << (parameters.contains("anc.enabled") ?
+                 (parameters.value("anc.enabled").toBool() ? "enabled" : "disabled") : "unchanged")
+             << ", ENC state:"
+             << (parameters.contains("enc.enabled") ?
+                 (parameters.value("enc.enabled").toBool() ? "enabled" : "disabled") : "unchanged")
+             << ", RNC state:"
+             << (parameters.contains("rnc.enabled") ?
+                 (parameters.value("rnc.enabled").toBool() ? "enabled" : "disabled") : "unchanged");
     qDebug() << "=== AncMessageHandler::serialize END (success) ===";
 
     return result;

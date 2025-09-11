@@ -21,7 +21,7 @@ class MessageSerializer : public QObject {
 
 public:
     explicit MessageSerializer(QObject* parent = nullptr);
-    ~MessageSerializer() override = default;
+    ~MessageSerializer() override;
 
     /**
      * @brief 序列化参数到字节数组
@@ -32,6 +32,16 @@ public:
     QByteArray serialize(MessageType messageType, const QVariantMap& parameters);
 
     /**
+     * @brief 序列化参数到完整的MsgRequestResponse格式
+     * @param messageType 消息类型
+     * @param parameters 参数映射
+     * @param functionCode 功能码（REQUEST或RESPONSE）
+     * @param useProtocolPackaging 是否使用协议封装（默认true）
+     * @return 完整的MsgRequestResponse字节数组，失败返回空数组
+     */
+    QByteArray serialize(MessageType messageType, const QVariantMap& parameters, FunctionCode functionCode, bool useProtocolPackaging = true);
+
+    /**
      * @brief 从字节数组反序列化参数
      * @param messageType 消息类型
      * @param data 字节数组
@@ -39,6 +49,16 @@ public:
      * @return 成功返回true，失败返回false
      */
     bool deserialize(MessageType messageType, const QByteArray& data, QVariantMap& parameters);
+
+    /**
+     * @brief 从完整的MsgRequestResponse格式反序列化参数
+     * @param data MsgRequestResponse格式的字节数组
+     * @param messageType 输出：解析出的消息类型
+     * @param functionCode 输出：解析出的功能码
+     * @param parameters 输出：参数映射
+     * @return 成功返回true，失败返回false
+     */
+    bool deserialize(const QByteArray& data, MessageType& messageType, FunctionCode& functionCode, QVariantMap& parameters);
 
     /**
      * @brief 检查是否支持某种消息类型
@@ -112,6 +132,7 @@ private:
 
 private:
     std::shared_ptr<MessageFactory> messageFactory_;
+    std::unique_ptr<class ProtocolPackager> protocolPackager_;
 
     // 统计信息
     struct Statistics {

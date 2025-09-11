@@ -1,4 +1,5 @@
 #include "message_serializer.h"
+#include "protocol_packager.h"
 #include <QDebug>
 
 namespace Protocol {
@@ -6,9 +7,12 @@ namespace Protocol {
 MessageSerializer::MessageSerializer(QObject* parent)
     : QObject(parent)
     , messageFactory_(std::make_shared<MessageFactory>())
+    , protocolPackager_(std::make_unique<ProtocolPackager>())
 {
     qDebug() << "MessageSerializer initialized";
 }
+
+MessageSerializer::~MessageSerializer() = default;
 
 QByteArray MessageSerializer::serialize(MessageType messageType, const QVariantMap& parameters) {
     auto handler = messageFactory_->getHandler(messageType);
@@ -112,6 +116,72 @@ bool MessageSerializer::registerCustomHandler(MessageType messageType, std::shar
     }
 
     return result;
+}
+
+QByteArray MessageSerializer::serialize(MessageType messageType, const QVariantMap& parameters, FunctionCode functionCode, bool useProtocolPackaging) {
+    // 首先使用原有方法序列化具体消息
+    QByteArray payloadData = serialize(messageType, parameters);
+
+    if (payloadData.isEmpty()) {
+        qWarning() << "Failed to serialize payload for message type:" << static_cast<int>(messageType);
+        return QByteArray();
+    }
+
+    // 如果不使用协议封装，直接返回payload数据（向后兼容）
+    if (!useProtocolPackaging) {
+        return payloadData;
+    }
+
+    // 使用协议封装器包装成完整的MsgRequestResponse格式
+    QByteArray result = protocolPackager_->packageMessage(messageType, functionCode, payloadData);
+
+    if (result.isEmpty()) {
+        QString error = QString("Protocol packaging failed for message type: %1").arg(static_cast<int>(messageType));
+        qWarning() << error;
+        emit serializationError(messageType, error);
+        recordStatistics(messageType, "serialize", false, 0);
+        return QByteArray();
+    }
+
+    qDebug() << "Message packaged successfully. Type:" << static_cast<int>(messageType)
+             << "FunCode:" << static_cast<int>(functionCode)
+             << "Total size:" << result.size() << "bytes";
+
+    emit serializationCompleted(messageType, true, result.size());
+    recordStatistics(messageType, "serialize", true, result.size());
+
+    return result;
+}
+
+bool MessageSerializer::deserialize(const QByteArray& data, MessageType& messageType, FunctionCode& functionCode, QVariantMap& parameters) {
+    if (data.isEmpty()) {
+        QString error = "Cannot deserialize empty data";
+        qWarning() << error;
+        return false;
+    }
+
+    // 使用协议封装器解包MsgRequestResponse格式
+    QByteArray payloadData;
+    if (!protocolPackager_->unpackageMessage(data, messageType, functionCode, payloadData)) {
+        QString error = "Failed to unpackage MsgRequestResponse format";
+        qWarning() << error;
+        emit serializationError(messageType, error);
+        recordStatistics(messageType, "deserialize", false, data.size());
+        return false;
+    }
+
+    // 使用原有方法反序列化具体消息
+    bool success = deserialize(messageType, payloadData, parameters);
+
+    if (success) {
+        qDebug() << "Message unpackaged and deserialized successfully. Type:" << static_cast<int>(messageType)
+                 << "FunCode:" << static_cast<int>(functionCode)
+                 << "Parameters:" << parameters.size();
+        emit deserializationCompleted(messageType, true, parameters.size());
+    }
+
+    recordStatistics(messageType, "deserialize", success, data.size());
+    return success;
 }
 
 void MessageSerializer::recordStatistics(MessageType messageType, const QString& operation, bool success, int dataSize) {

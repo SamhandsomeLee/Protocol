@@ -97,7 +97,8 @@ bool ProtocolAdapterRefactored::sendParameterUpdate(const QString& parameterPath
     }
 
     qDebug() << "Attempting serialization with message serializer...";
-    QByteArray data = messageSerializer_->serialize(paramInfo.messageType, parameters);
+    // 使用新的序列化方法，生成完整的MsgRequestResponse格式
+    QByteArray data = messageSerializer_->serialize(paramInfo.messageType, parameters, FunctionCode::REQUEST, true);
 
     if (data.isEmpty()) {
         qDebug() << "✗ SERIALIZATION FAILED";
@@ -119,6 +120,12 @@ bool ProtocolAdapterRefactored::sendParameterUpdate(const QString& parameterPath
     qDebug() << "=== Starting data transmission ===";
     qDebug() << "Sending data via connection manager...";
     qDebug() << "Data to send size:" << data.size() << "bytes";
+    qDebug() << "Data content (hex):" << data.toHex();
+    qDebug() << "Data content (hex with spaces):" << data.toHex(' ');
+    qDebug() << "Data content (raw bytes):";
+    for (int i = 0; i < data.size(); ++i) {
+        qDebug() << "  Byte[" << i << "]:" << QString("0x%1").arg((unsigned char)data[i], 2, 16, QChar('0'));
+    }
     bool success = connectionManager_->sendData(data);
 
     qDebug() << "=== Data transmission result ===";
@@ -199,7 +206,7 @@ bool ProtocolAdapterRefactored::sendParameterGroup(const QStringList& paths, con
         MessageType messageType = it.key();
         const QVariantMap& groupParams = it.value();
 
-        QByteArray data = messageSerializer_->serialize(messageType, groupParams);
+        QByteArray data = messageSerializer_->serialize(messageType, groupParams, FunctionCode::REQUEST, true);
         if (data.isEmpty()) {
             QString error = QString("Failed to serialize message type: %1").arg(static_cast<int>(messageType));
             qWarning() << error;
@@ -252,7 +259,7 @@ QByteArray ProtocolAdapterRefactored::serializeParameters(const QVariantMap& par
         return QByteArray();
     }
 
-    return messageSerializer_->serialize(paramInfo.messageType, parameters);
+    return messageSerializer_->serialize(paramInfo.messageType, parameters, FunctionCode::REQUEST, true);
 }
 
 bool ProtocolAdapterRefactored::deserializeParameters(const QByteArray& data, QVariantMap& parameters) {
@@ -267,14 +274,24 @@ bool ProtocolAdapterRefactored::deserializeParameters(const QByteArray& data, QV
     }
 
     // 简化实现：尝试各种消息类型进行反序列化
-    // 实际实现中可能需要根据数据头部确定消息类型
+    // 尝试使用新的解包方法（MsgRequestResponse格式）
+    MessageType messageType;
+    FunctionCode functionCode;
+    if (messageSerializer_->deserialize(data, messageType, functionCode, parameters)) {
+        qDebug() << "Successfully deserialized MsgRequestResponse - Type:" << static_cast<int>(messageType)
+                 << "FunCode:" << static_cast<int>(functionCode);
+        return true;
+    }
+
+    // 向后兼容：尝试使用旧方法（直接消息格式）
+    qDebug() << "Falling back to legacy deserialization...";
     auto supportedTypes = messageSerializer_->getSupportedMessageTypes();
 
-    for (MessageType messageType : supportedTypes) {
+    for (MessageType legacyType : supportedTypes) {
         QVariantMap tempParams;
-        if (messageSerializer_->deserialize(messageType, data, tempParams)) {
+        if (messageSerializer_->deserialize(legacyType, data, tempParams)) {
             parameters = tempParams;
-            qDebug() << "Successfully deserialized as message type:" << static_cast<int>(messageType);
+            qDebug() << "Successfully deserialized as legacy message type:" << static_cast<int>(legacyType);
             return true;
         }
     }
